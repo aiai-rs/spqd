@@ -1,0 +1,2882 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>小暗网 | 匿名交易平台</title>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#eff6ff',
+                            100: '#dbeafe',
+                            500: '#3b82f6',
+                            600: '#2563eb',
+                            purple: '#6366f1',
+                        }
+                    },
+                    boxShadow: {
+                        'tech': '0 4px 20px -2px rgba(59, 130, 246, 0.15)',
+                        'tech-hover': '0 10px 25px -5px rgba(59, 130, 246, 0.25)',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background-color: #f8fafc;
+            color: #334155;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .btn-gradient {
+            background: linear-gradient(90deg, #3b82f6 0%, #6366f1 100%);
+            transition: all 0.3s ease;
+        }
+        .btn-gradient:hover {
+            opacity: 0.9;
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+            transform: translateY(-1px);
+        }
+
+        /* 隐藏滚动条但保留功能 */
+        .scrollbar-hide::-webkit-scrollbar {
+            display: none;
+        }
+        .scrollbar-hide {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
+        .nav-item {
+            position: relative;
+            white-space: nowrap;
+        }
+        .nav-item.active {
+            color: #3b82f6;
+            font-weight: 600;
+        }
+        /* 仅在桌面端显示底部指示条 */
+        @media (min-width: 768px) {
+            .nav-item::after {
+                content: '';
+                position: absolute;
+                bottom: -22px;
+                left: 0;
+                width: 0;
+                height: 3px;
+                background: #6366f1;
+                transition: width 0.3s ease;
+                border-radius: 3px 3px 0 0;
+            }
+            .nav-item.active::after {
+                width: 100%;
+            }
+        }
+
+        .font-fix {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif !important;
+        }
+        .captcha-display {
+            font-family: 'Courier New', monospace;
+            letter-spacing: 0.5em;
+            font-weight: bold;
+            color: #3b82f6;
+            background: #f0f9ff;
+            user-select: none;
+        }
+
+        /* 客服悬浮窗 */
+        .chat-widget {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 50;
+        }
+       .chat-window {
+    position: absolute;
+    bottom: 80px;
+    right: 0;
+    width: 340px; /* 稍微加宽 */
+    height: 480px; /* 加高 */
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border-radius: 24px; /* 更圆润 */
+    box-shadow: 0 20px 40px -5px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(0,0,0,0.05);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    transform-origin: bottom right;
+    transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1); /* 更丝滑的弹出动画 */
+}
+
+/* 消息列表动画 */
+.chat-msg {
+    max-width: 85%;
+    padding: 10px 14px;
+    border-radius: 18px;
+    font-size: 14px;
+    margin-bottom: 12px;
+    word-wrap: break-word;
+    line-height: 1.5;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+    animation: msg-pop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); /* 消息弹出动画 */
+}
+
+@keyframes msg-pop {
+    0% { opacity: 0; transform: translateY(10px) scale(0.95); }
+    100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.chat-msg.user {
+    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+    color: white;
+    align-self: flex-end;
+    border-bottom-right-radius: 4px;
+}
+
+.chat-msg.admin {
+    background: #f8fafc;
+    color: #1e293b;
+    border: 1px solid #e2e8f0;
+    align-self: flex-start;
+    border-bottom-left-radius: 4px;
+}
+        
+        /* 轮播图按钮 */
+        .carousel-btn {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(255, 255, 255, 0.8);
+            border-radius: 50%;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            z-index: 10;
+            transition: 0.2s;
+        }
+        .carousel-btn:hover { background: white; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+        .carousel-btn.left { left: 10px; }
+        .carousel-btn.right { right: 10px; }
+        
+        .modal-enter-active, .modal-leave-active { transition: opacity 0.3s ease; }
+        .modal-enter-from, .modal-leave-to { opacity: 0; }
+        .modal-enter-active .modal-content, .modal-leave-active .modal-content { transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        .modal-enter-from .modal-content, .modal-leave-to .modal-content { transform: scale(0.95); }
+
+        /* 新增样式 */
+        .order-timer {
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+            color: #ef4444;
+        }
+        
+        .contact-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        
+        .contact-btn {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px;
+            border-radius: 10px;
+            text-decoration: none;
+            transition: all 0.3s;
+            font-weight: 500;
+        }
+        
+        .contact-btn.telegram {
+            background: #0088cc;
+            color: white;
+        }
+        
+        .contact-btn.website {
+            background: #10b981;
+            color: white;
+        }
+        
+        .contact-btn.email {
+            background: #6366f1;
+            color: white;
+        }
+        
+        .contact-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+        
+        .warning-box {
+            background: linear-gradient(135deg, #fecaca 0%, #fca5a5 100%);
+            border: 2px solid #dc2626;
+            border-radius: 10px;
+            padding: 15px;
+            margin-top: 20px;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.4); }
+            70% { box-shadow: 0 0 0 10px rgba(220, 38, 38, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0); }
+        }
+        
+        .warning-text {
+            color: #7f1d1d;
+            font-weight: bold;
+            text-align: center;
+            letter-spacing: 0.5px;
+        }
+        
+        /* 购物车徽章 */
+        .cart-badge {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background: #ef4444;
+            color: white;
+            border-radius: 50%;
+            width: 18px;
+            height: 18px;
+            font-size: 11px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        /* 余额支付样式 */
+        .balance-payment {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+        }
+        
+        .balance-payment:hover {
+            background: linear-gradient(135deg, #059669 0%, #047857 100%);
+        }
+        
+        /* 商品网格布局调整 */
+        @media (max-width: 640px) {
+            .product-grid {
+                grid-template-columns: repeat(2, 1fr) !important;
+            }
+        }
+        
+        /* 导航栏优化 */
+        @media (max-width: 768px) {
+            .nav-container {
+                overflow-x: auto;
+                overflow-y: hidden;
+                -webkit-overflow-scrolling: touch;
+            }
+            
+            .nav-items {
+                display: flex;
+                flex-wrap: nowrap;
+                min-width: max-content;
+            }
+            
+            .nav-item {
+                padding: 0 12px;
+                font-size: 14px;
+            }
+        }
+      @media (max-width: 768px) {
+            .chat-widget {
+                bottom: 111px !important;
+            }
+        }
+    </style>
+</head>
+<body class="antialiased min-h-screen flex flex-col">
+
+<div id="app" class="flex flex-col h-full" v-cloak>
+    
+    <nav class="fixed top-0 w-full z-50 bg-white/90 backdrop-blur-md border-b border-slate-200 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16 gap-4">
+<div class="flex items-center gap-3 cursor-pointer flex-shrink-0" @click="setView('home')">
+    <div class="relative group">
+       <div class="w-11 h-11 rounded-full bg-black flex items-center justify-center text-[#00ff41] shadow-[0_0_15px_rgba(0,255,65,0.4)] border border-[#00ff41]/60 transition-all duration-300 group-hover:scale-110">
+    <i class="ri-spy-fill text-2xl"></i>
+</div>
+        <div class="absolute -top-1 -right-1 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white animate-pulse"></div>
+    </div>
+    
+    <div class="flex flex-col justify-center">
+        <span class="font-black text-lg leading-none text-slate-900 font-mono tracking-tighter" style="font-family: 'Courier New', monospace;">
+            小暗网
+        </span>
+        <span class="mt-1 inline-block bg-slate-900 text-[#00ff42] text-[10px] font-bold px-1 rounded leading-tight tracking-wider font-mono w-max">
+            XAW888.COM
+        </span>
+    </div>
+</div>
+
+                <div class="hidden md:flex flex-1 overflow-x-auto scrollbar-hide items-center gap-6 px-2 nav-container">
+                    <div class="flex items-center gap-6 nav-items">
+                        <a @click="setView('home')" :class="['nav-item cursor-pointer text-sm font-medium transition hover:text-brand-500 flex-shrink-0', view==='home' && filterCat==='all' ? 'active' : 'text-slate-600']">首页</a>
+                        <a @click="setView('products')" :class="['nav-item cursor-pointer text-sm font-medium transition hover:text-brand-500 flex-shrink-0', view==='home' && filterCat!=='all' ? 'active' : 'text-slate-600']">商品</a>
+                        <a @click="checkLoginAndGo('orders_page')" :class="['nav-item cursor-pointer text-sm font-medium transition hover:text-brand-500 flex-shrink-0', view==='orders_page' ? 'active' : 'text-slate-600']">订单</a>
+                        <a @click="setView('hiring')" :class="['nav-item cursor-pointer text-sm font-medium transition hover:text-brand-500 flex-shrink-0', view==='hiring' ? 'active' : 'text-slate-600']">招聘</a>
+                        <a @click="checkLoginAndGo('profile')" :class="['nav-item cursor-pointer text-sm font-medium transition hover:text-brand-500 flex-shrink-0', view==='profile' ? 'active' : 'text-slate-600']">个人中心</a>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-3 flex-shrink-0">
+                    <!-- 购物车按钮 -->
+                    <div class="relative" v-if="user.id">
+                        <button @click="viewCart" class="text-slate-600 hover:text-brand-500 transition relative">
+                            <i class="ri-shopping-cart-2-line text-xl"></i>
+                            <span v-if="cartItems.length > 0" class="cart-badge">{{ cartItems.length }}</span>
+                        </button>
+                    </div>
+                    
+                    <template v-if="!user.id">
+                        <button @click="openAuth('login')" class="px-3 sm:px-5 py-1.5 text-xs sm:text-sm font-medium text-brand-500 border border-brand-500 rounded-md hover:bg-brand-50 transition flex items-center gap-1 whitespace-nowrap">
+                            登录
+                        </button>
+                        <button @click="openAuth('register')" class="btn-gradient px-3 sm:px-5 py-1.5 text-xs sm:text-sm font-medium text-white rounded-md shadow-lg shadow-brand-500/30 flex items-center gap-1 whitespace-nowrap">
+                            注册
+                        </button>
+                    </template>
+                    <template v-else>
+                        <div class="flex items-center gap-2 bg-slate-100 rounded-full pl-1 pr-3 py-1 cursor-pointer hover:bg-slate-200 transition" @click="setView('profile')">
+                            <div class="w-6 h-6 sm:w-7 sm:h-7 bg-brand-500 rounded-full text-white flex items-center justify-center text-xs">
+                                {{ user.contact.charAt(0).toUpperCase() }}
+                            </div>
+                            <span class="text-xs sm:text-sm font-medium text-slate-700 truncate max-w-[60px] sm:max-w-[80px]">{{ user.contact }}</span>
+                        </div>
+                        <button @click="logout" class="text-slate-400 hover:text-red-500 transition" title="退出">
+                            <i class="ri-logout-circle-r-line text-lg sm:text-xl"></i>
+                        </button>
+                    </template>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="flex-grow pt-20 pb-24 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full">
+        
+     <div v-if="settings.announcement && view === 'home'" class="mb-5 animate-fade-in-up">
+    <div class="bg-gradient-to-r from-blue-50 via-white to-indigo-50 rounded-2xl p-4 shadow-sm border border-brand-100/60 relative overflow-hidden">
+        <div class="flex items-start gap-3 relative z-10">
+            <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-brand-500 to-brand-600 text-white flex items-center justify-center shadow-lg shadow-brand-500/20 flex-shrink-0 mt-0.5">
+                <i class="ri-notification-3-fill text-lg"></i>
+            </div>
+            <div class="flex-1 min-w-0 pt-0.5">
+                <div class="flex items-center gap-2 mb-1">
+                    <h3 class="text-xs font-bold text-brand-500 tracking-wider uppercase">网站公告</h3>
+                    <span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-red-50 text-red-500 border border-red-100 leading-none">NEW</span>
+                </div>
+               <div class="text-sm font-bold text-brand-900 leading-7 tracking-wide whitespace-pre-line break-words">
+                     {{ settings.announcement }}
+              </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+        <div v-if="view === 'home'" class="animate-fade-in">
+            <div class="flex flex-col md:flex-row justify-between items-center gap-4 mb-8">
+                <h2 class="text-2xl font-bold text-slate-800 tracking-tight self-start md:self-center">
+                    {{ filterCat === 'all' ? '精选商品' : filterCat }}
+                </h2>
+                <div class="flex flex-col md:flex-row gap-3 w-full md:w-auto">
+                    <div class="relative group">
+                        <i class="ri-search-line absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-brand-500 transition"></i>
+                        <input v-model="searchQuery" type="text" placeholder="搜索商品..." class="w-full md:w-64 bg-white border border-slate-200 rounded-full py-2.5 pl-10 pr-4 text-sm focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-50 transition shadow-sm">
+                    </div>
+                    <div class="flex gap-2 overflow-x-auto pb-1 md:pb-0 w-full md:w-auto scrollbar-hide">
+                        <button @click="filterCat = 'all'" :class="filterCat === 'all' ? 'bg-slate-800 text-white shadow-lg' : 'bg-white text-slate-600 hover:bg-slate-50 border border-slate-200'" class="px-5 py-2.5 rounded-full text-sm font-medium whitespace-nowrap transition">全部</button>
+                        <button v-for="cat in categories" :key="cat" @click="filterCat = cat" :class="filterCat === cat ? 'bg-slate-800 text-white shadow-lg' : 'bg-white text-slate-600 hover:bg-slate-50 border border-slate-200'" class="px-5 py-2.5 rounded-full text-sm font-medium whitespace-nowrap transition">{{ cat }}</button>
+                    </div>
+                </div>
+            </div>
+
+            <div v-if="loading" class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div v-for="i in 6" :key="i" class="bg-white rounded-2xl p-4 shadow-sm h-80 animate-pulse">
+                    <div class="bg-slate-200 h-40 rounded-xl mb-4"></div>
+                    <div class="h-4 bg-slate-200 rounded w-3/4 mb-2"></div>
+                    <div class="h-4 bg-slate-200 rounded w-1/2"></div>
+                </div>
+            </div>
+            
+            <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 product-grid">
+                <div v-for="prod in filteredProducts" :key="prod.id" @click="openProductDetail(prod)" class="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-tech-hover transition-all duration-300 group cursor-pointer border border-slate-100 flex flex-col h-full relative">
+                    <div v-if="prod.is_pinned" class="absolute top-3 right-3 z-10 bg-gradient-to-r from-yellow-400 to-orange-400 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-md">HOT</div>
+                    
+                    <div class="aspect-[4/3] bg-slate-100 relative overflow-hidden">
+                        <img v-if="getImgList(prod).length > 0" :src="getImgList(prod)[0]" class="w-full h-full object-cover group-hover:scale-110 transition duration-700" @error="handleImageError">
+                        <div v-else class="w-full h-full flex items-center justify-center text-slate-300 bg-slate-50">
+                            <i class="ri-image-2-line text-4xl"></i>
+                        </div>
+                        <div class="absolute inset-0 bg-black/5 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                            <span class="bg-white/90 backdrop-blur text-slate-800 text-xs font-bold px-4 py-2 rounded-full shadow-lg transform translate-y-4 group-hover:translate-y-0 transition">查看详情</span>
+                        </div>
+                    </div>
+
+                    <div class="p-4 flex-grow flex flex-col">
+                        <div class="mb-2">
+                            <span class="text-[10px] text-brand-600 bg-brand-50 px-2 py-0.5 rounded-md font-medium">{{ prod.category }}</span>
+                        </div>
+                        <h3 class="text-base font-bold text-slate-800 mb-1 line-clamp-1 group-hover:text-brand-600 transition">{{ prod.name }}</h3>
+                        <p class="text-slate-500 text-xs line-clamp-2 mb-4 flex-grow leading-relaxed">{{ prod.description }}</p>
+                        
+                        <div class="flex items-center justify-between mt-auto pt-3 border-t border-slate-50">
+                            <div>
+                                <span class="text-xs text-slate-400">价格</span>
+                               <div class="text-lg font-bold text-slate-800 font-mono">{{ parseFloat(prod.price) }} <span class="text-xs font-normal text-slate-500">USDT</span></div>
+                            </div>
+                            <div class="text-right">
+                                <span class="text-xs text-slate-400 block mb-0.5">库存</span>
+                                <span :class="prod.stock > 0 ? 'text-emerald-500 bg-emerald-50' : 'text-red-500 bg-red-50'" class="px-2 py-0.5 rounded text-xs font-bold">
+                                    {{ prod.stock > 0 ? prod.stock : '售罄' }}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div v-if="!loading && filteredProducts.length === 0" class="text-center py-24">
+                <div class="bg-slate-50 w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <i class="ri-inbox-2-line text-4xl text-slate-300"></i>
+                </div>
+                <h3 class="text-slate-600 font-medium">未找到相关商品</h3>
+                <p class="text-slate-400 text-sm mt-1">尝试切换分类或搜索其他关键词</p>
+            </div>
+        </div>
+
+<div v-if="view === 'hiring'" class="animate-fade-in max-w-2xl mx-auto pb-10">
+            <div class="mb-8">
+                <div class="bg-gradient-to-br from-white to-slate-50 rounded-3xl p-6 shadow-lg shadow-slate-200/50 border border-slate-100 relative overflow-hidden">
+                    <div class="absolute top-0 right-0 w-32 h-32 bg-brand-500/5 rounded-full blur-3xl -mr-16 -mt-16"></div>
+                    
+                    <div class="flex items-center gap-3 mb-6">
+                        <div class="w-10 h-10 rounded-2xl bg-brand-50 text-brand-600 flex items-center justify-center shadow-sm">
+                            <i class="ri-megaphone-fill text-xl"></i>
+                        </div>
+                        <div>
+                            <h2 class="text-lg font-bold text-slate-800">官方公告</h2>
+                            <p class="text-xs text-slate-400">最新发布 · 请仔细阅读</p>
+                        </div>
+                    </div>
+
+                    <div class="space-y-4">
+                        <div class="space-y-3 text-sm text-slate-600 leading-relaxed">
+                        <p>
+                            👋 欢迎加入我们！我是 <span class="font-bold text-slate-800">Boss</span>。我是该网站的老板。
+                        </p>
+                        <p class="bg-slate-50 p-2 rounded-lg border border-slate-100">
+                            网站问题请联系负责人 <a href="https://t.me/rrss0" class="text-brand-600 font-bold hover:underline">@rrss0</a>。<br>
+                            购买商品联系在线客服就行了。
+                        </p>
+                        <p>
+                            应聘或投诉和商务合作直接点击下方的 <span class="text-brand-600 font-bold">联系Boss</span>。<br>
+                            没有Telegram也就是飞机的点击下方的 <span class="text-emerald-500 font-bold">招聘官网</span> 就可以了。
+                        </p>
+                        <p class="font-medium text-slate-800">
+                            投诉/应聘/商务合作请直接联系我：<a href="https://t.me/rrii8" class="text-brand-600 font-bold hover:underline">@rrii8</a>
+                        </p>
+                    </div>
+
+                        <div class="bg-red-50/80 border border-red-100 rounded-xl p-3.5 flex gap-3 items-start">
+                            <i class="ri-shield-check-fill text-red-500 text-lg mt-0.5 shrink-0"></i>
+                            <div class="text-xs text-red-700 leading-5">
+                                <span class="font-bold block mb-1">防骗指南</span>
+                                认准管理员用户名均为 <span class="bg-white px-1.5 py-0.5 rounded text-red-600 font-mono font-bold border border-red-100">4字母+1数字</span> (如: rrss0, rrii8)。请勿轻信任何模仿我们的账号！
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-3 pt-2">
+                            <a href="https://t.me/rrii8" target="_blank" class="flex items-center justify-center gap-2 bg-white border border-slate-200 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:border-brand-500 hover:text-brand-600 transition shadow-sm">
+                                <i class="ri-telegram-fill text-[#0088cc] text-lg"></i> 联系Boss
+                            </a>
+                            <a href="https://HY88.Pro" target="_blank" class="flex items-center justify-center gap-2 bg-white border border-slate-200 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:border-brand-500 hover:text-brand-600 transition shadow-sm">
+                                <i class="ri-global-line text-emerald-500 text-lg"></i> 招聘官网
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="space-y-5">
+                <div class="flex items-center justify-between px-2 mb-2">
+                    <h3 class="font-bold text-slate-800 text-lg flex items-center gap-2">
+                        <span class="w-1.5 h-6 bg-brand-500 rounded-full"></span>
+                        正在招聘的岗位
+                    </h3>
+                    <span class="text-xs text-slate-400 bg-slate-100 px-2 py-1 rounded-md">{{ hiringList.length }} 个岗位</span>
+                </div>
+
+                <div v-for="(job, idx) in hiringList" :key="idx" class="group bg-white rounded-3xl p-1 shadow-sm hover:shadow-md transition duration-300 border border-slate-100 relative overflow-hidden">
+                    <div class="p-5 relative z-10">
+                        <div class="flex justify-between items-start mb-4">
+                            <div>
+                                <h3 class="text-xl font-bold text-slate-800 mb-1 flex items-center gap-2">
+                                    {{ job.title }}
+                                </h3>
+                                <div class="flex gap-2 mt-2">
+                                    <span class="text-[10px] text-slate-500 bg-slate-50 px-2 py-0.5 rounded border border-slate-100">全职/兼职</span>
+                                </div>
+                            </div>
+                            <div class="w-10 h-10 bg-brand-50 rounded-full flex items-center justify-center text-brand-600 group-hover:scale-110 transition">
+                                <i class="ri-briefcase-4-line text-xl"></i>
+                            </div>
+                        </div>
+
+                        <div class="mb-6">
+                            <div class="bg-slate-50/50 rounded-2xl p-4 text-sm text-slate-600 leading-relaxed border border-slate-50">
+                                <ul class="list-disc pl-4 space-y-1 marker:text-brand-300">
+                                    <template v-for="(line, lIdx) in job.content.split('\n')" :key="lIdx">
+                                        <li v-if="line.trim()" class="pl-1">{{ line.trim() }}</li>
+                                    </template>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <div v-if="job.contact" class="flex items-center gap-3 pt-2">
+                            <a :href="getTelegramLink(job.contact)" target="_blank" class="flex-1 btn-gradient text-white text-sm font-bold py-3 rounded-xl shadow-lg shadow-brand-500/20 hover:-translate-y-0.5 transition flex items-center justify-center gap-2">
+                                <i class="ri-send-plane-fill"></i> 立即沟通
+                            </a>
+                            <div class="px-4 py-3 bg-slate-50 text-slate-500 rounded-xl text-xs font-mono font-medium border border-slate-100 select-all">
+                                @{{ job.contact }}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="absolute -bottom-10 -right-10 w-32 h-32 bg-gradient-to-tl from-brand-50 to-transparent rounded-full opacity-50 group-hover:opacity-100 transition"></div>
+                </div>
+
+                <div v-if="hiringList.length === 0" class="text-center py-16">
+                    <div class="bg-slate-50 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-3">
+                        <i class="ri-briefcase-line text-3xl text-slate-300"></i>
+                    </div>
+                    <p class="text-slate-400 text-sm">暂时没有招聘职位</p>
+                </div>
+            </div>
+        </div>
+<div v-if="view === 'profile'" class="animate-fade-in max-w-lg mx-auto pt-4">
+            <div class="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden relative mb-6">
+                <div class="h-24 bg-brand-50"></div>
+                
+                <div class="px-6 pb-6 -mt-12 flex flex-col items-center text-center relative z-10">
+                    <div class="w-24 h-24 bg-white rounded-full p-1 shadow-lg mb-3">
+                        <div class="w-full h-full bg-slate-100 rounded-full flex items-center justify-center text-3xl font-bold text-brand-500">
+                            {{ user.contact ? user.contact.charAt(0).toUpperCase() : 'U' }}
+                        </div>
+                    </div>
+                    
+                    <h2 class="text-xl font-bold text-slate-800">{{ user.contact }}</h2>
+                    <p class="text-xs text-slate-400 font-mono mt-1">UID: {{ user.uid || user.id }}</p>
+
+                    <div class="w-full bg-slate-50 rounded-2xl p-6 mt-6 mb-6 relative">
+                        <div class="text-sm text-slate-500 mb-2">账户余额</div>
+                        <div class="text-3xl font-bold text-emerald-500 font-mono">
+    {{ parseFloat(user.balance || 0).toFixed(2) }} <span class="text-sm text-slate-400 font-normal">USDT</span>
+</div>
+                        <div @click="openBalanceLogs" class="absolute top-6 right-6 text-slate-400 hover:text-brand-500 cursor-pointer flex items-center gap-1 text-xs bg-white px-2 py-1 rounded border border-slate-200">
+                            <i class="ri-bill-line"></i> 资金明细
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4 w-full">
+                        <button @click="openRechargeModal" class="flex items-center justify-center gap-2 py-3.5 bg-emerald-50 text-emerald-600 rounded-xl font-bold hover:bg-emerald-100 transition">
+                            <i class="ri-wallet-3-fill"></i> 充值
+                        </button>
+                        <button @click="openWithdrawModal" class="flex items-center justify-center gap-2 py-3.5 bg-slate-100 text-slate-600 rounded-xl font-bold hover:bg-slate-100 transition">
+                            <i class="ri-bank-card-fill"></i> 提现
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden mb-8">
+                <div @click="inviteModal.open = true" class="flex items-center justify-between p-5 border-b border-slate-50 bg-gradient-to-r from-violet-50 to-purple-50 cursor-pointer hover:brightness-95 transition relative overflow-hidden group">
+                    <div class="flex items-center gap-3 relative z-10">
+                        <div class="w-8 h-8 rounded-full bg-violet-500 text-white flex items-center justify-center shadow-lg shadow-violet-500/30">
+                            <i class="ri-gift-2-fill"></i>
+                        </div>
+                        <div>
+                            <span class="text-violet-900 font-bold text-base">邀请有礼</span>
+                            <span class="ml-2 text-[10px] text-white bg-violet-500 px-1.5 py-0.5 rounded">赚 5%</span>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2 relative z-10">
+                        <span class="text-xs text-violet-600 font-medium">查看详情</span>
+                        <i class="ri-arrow-right-s-line text-violet-400"></i>
+                    </div>
+                    <div class="absolute -right-2 -bottom-4 text-violet-100 text-6xl opacity-50 group-hover:scale-110 transition duration-500 rotate-12">
+                        <i class="ri-money-cny-circle-fill"></i>
+                    </div>
+                </div>
+
+                <div @click="checkLoginAndGo('orders_page')" class="flex items-center justify-between p-5 border-b border-slate-50 hover:bg-slate-50 cursor-pointer active:bg-slate-100">
+                    <div class="flex items-center gap-3">
+                        <div class="w-8 h-8 rounded-full bg-blue-50 text-blue-500 flex items-center justify-center"><i class="ri-file-list-3-line"></i></div>
+                        <span class="text-slate-700 font-medium">我的订单</span>
+                    </div>
+                    <i class="ri-arrow-right-s-line text-slate-300"></i>
+                </div>
+
+                <div @click="openRecordModal('recharge')" class="flex items-center justify-between p-5 border-b border-slate-50 hover:bg-slate-50 cursor-pointer active:bg-slate-100">
+                    <div class="flex items-center gap-3">
+                        <div class="w-8 h-8 rounded-full bg-emerald-50 text-emerald-500 flex items-center justify-center"><i class="ri-add-circle-line"></i></div>
+                        <span class="text-slate-700 font-medium">充值记录</span>
+                    </div>
+                    <i class="ri-arrow-right-s-line text-slate-300"></i>
+                </div>
+
+                <div @click="openRecordModal('withdraw')" class="flex items-center justify-between p-5 border-b border-slate-50 hover:bg-slate-50 cursor-pointer active:bg-slate-100">
+                    <div class="flex items-center gap-3">
+                        <div class="w-8 h-8 rounded-full bg-orange-50 text-orange-500 flex items-center justify-center"><i class="ri-subtract-line"></i></div>
+                        <span class="text-slate-700 font-medium">提现记录</span>
+                    </div>
+                    <i class="ri-arrow-right-s-line text-slate-300"></i>
+                </div>
+
+                <div @click="profileTab = 'security'; view = 'security_page'" class="flex items-center justify-between p-5 hover:bg-slate-50 cursor-pointer active:bg-slate-100">
+    <div class="flex items-center gap-3">
+        <div class="w-8 h-8 rounded-full bg-purple-50 text-purple-500 flex items-center justify-center"><i class="ri-shield-key-line"></i></div>
+        <span class="text-slate-700 font-medium">账号安全</span>
+    </div>
+    <i class="ri-arrow-right-s-line text-slate-300"></i>
+</div>
+            </div>
+
+            <button @click="logout" class="w-full py-4 text-slate-400 font-medium hover:text-red-500 transition mb-10">退出登录</button>
+        </div>
+
+<div v-if="view === 'orders_page'" class="animate-fade-in max-w-2xl mx-auto">
+            <div class="flex items-center gap-2 mb-6 sticky top-20 z-10 bg-slate-50/90 backdrop-blur py-2">
+                <button @click="view='profile'" class="w-8 h-8 rounded-full bg-white border border-slate-200 flex items-center justify-center text-slate-500 shadow-sm"><i class="ri-arrow-left-line"></i></button>
+                <h2 class="text-xl font-bold text-slate-800">我的订单</h2>
+            </div>
+            
+            <div v-if="myOrders.length === 0" class="text-center py-20">
+                <div class="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <i class="ri-file-list-3-line text-4xl text-slate-300"></i>
+                </div>
+                <span class="text-slate-400 font-medium">暂无订单记录</span>
+            </div>
+
+            <div v-else class="space-y-4 pb-20">
+                <div v-for="order in myOrders.filter(o => o.product_name !== '余额充值')" :key="order.order_id" class="bg-white border border-slate-100 rounded-2xl p-5 shadow-sm hover:shadow-md transition duration-300 relative overflow-hidden group">
+                    <div class="absolute top-0 right-0 px-3 py-1 text-xs font-bold rounded-bl-xl" 
+     :class="{
+         'bg-slate-200 text-slate-500': isOrderExpired(order) && order.status === '待支付',
+         'bg-brand-50 text-brand-600': !isOrderExpired(order) && order.status === '待支付',
+         'bg-emerald-50 text-emerald-600': order.status === '已支付' || order.status === '已发货',
+         'bg-slate-100 text-slate-500': order.status === '已取消'
+     }">
+    {{ (isOrderExpired(order) && order.status === '待支付') ? '已过期' : order.status }}
+</div>
+
+                    <div class="flex items-center gap-2 mb-4 pr-16">
+                        <span class="bg-slate-100 text-slate-500 text-[10px] px-1.5 py-0.5 rounded font-mono">订单号</span>
+                        <span class="text-xs text-slate-500 font-fix select-all cursor-pointer hover:text-brand-500" @click="navigator.clipboard.writeText(order.order_id)" title="点击复制">
+                            {{ order.order_id }} <i class="ri-file-copy-line ml-0.5"></i>
+                        </span>
+                    </div>
+
+                    <div class="flex gap-4 mb-4">
+                        <div class="w-16 h-16 bg-slate-50 rounded-lg overflow-hidden flex-shrink-0 border border-slate-100">
+                         <img v-if="getImgList(order).length > 0" :src="getImgList(order)[0]" class="w-full h-full object-cover">
+                         <div v-else class="w-full h-full flex items-center justify-center text-slate-300"><i class="ri-shopping-bag-3-line text-2xl"></i></div>
+                    </div>
+                        <div class="flex-1 min-w-0">
+                            <h3 class="font-bold text-slate-800 text-base mb-1 truncate">{{ order.product_name }}</h3>
+                            <div class="flex items-center gap-2 text-xs text-slate-400">
+                                <span class="bg-slate-50 px-2 py-0.5 rounded border border-slate-100">数量 x1</span>
+                                <span>{{ formatDate(order.created_at) }}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                   <div class="pt-4 border-t border-slate-50">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <span class="text-xs text-slate-400 block">实付金额</span>
+                                <span class="text-lg font-bold text-slate-800 font-mono">{{ parseFloat(order.usdt_amount).toFixed(2) }} <span class="text-xs font-normal text-slate-500">USDT</span></span>
+                            </div>
+                            
+                            <div class="flex flex-wrap justify-end gap-2 mt-2">
+                                <button v-if="order.status === '待支付' && !isOrderExpired(order)" @click.stop="cancelOrder(order.order_id)" class="px-4 py-2 text-slate-500 text-xs font-bold hover:bg-slate-100 rounded-lg transition border border-slate-200">
+                                    取消订单
+                                </button>
+                                
+                                <button v-if="order.status === '待支付' && !isOrderExpired(order)" @click.stop="showPaymentInfo(order)" class="btn-gradient px-4 py-2 text-white text-xs font-bold rounded-lg shadow-md hover:-translate-y-0.5 transition flex items-center gap-1">
+                                    去支付/上传凭证 <i class="ri-secure-payment-line"></i>
+                                </button>
+                                
+                                <button v-if="order.status === '待核实'" class="px-3 py-2 text-brand-600 bg-brand-50 text-xs font-bold rounded-lg cursor-default border border-brand-100">
+                                    <i class="ri-time-line"></i> 凭证核实中
+                                </button>
+
+                                <button v-if="order.status === '已支付' || order.status === '已发货'" @click.stop="toggleChat" class="px-4 py-2 text-emerald-600 bg-emerald-50 text-xs font-bold rounded-lg hover:bg-emerald-100 transition border border-emerald-100">
+                                    <i class="ri-customer-service-2-line"></i> 联系售后
+                                </button>
+                            </div>
+                        </div>
+
+                        <div v-if="order.status === '已取消'" class="mt-3 bg-red-50 border border-red-100 rounded-lg p-3 text-xs text-red-600 leading-relaxed flex items-start gap-2">
+                            <i class="ri-error-warning-fill text-base mt-0.5"></i>
+                            <div>
+                                <p class="font-bold">该笔订单已被客服取消</p>
+                                <p>如有疑问请联系客服</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div v-if="view === 'security_page'" class="animate-fade-in max-w-lg mx-auto">
+             <div class="flex items-center gap-2 mb-6">
+                <button @click="view='profile'" class="w-8 h-8 rounded-full bg-white border border-slate-200 flex items-center justify-center text-slate-500"><i class="ri-arrow-left-line"></i></button>
+                <h2 class="text-xl font-bold text-slate-800">修改密码</h2>
+            </div>
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+                 <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-bold text-slate-700 mb-1">旧密码</label>
+                        <input v-model="securityForm.oldPassword" type="password" class="w-full bg-slate-50 border border-slate-200 rounded-lg p-3">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-bold text-slate-700 mb-1">新密码</label>
+                        <input v-model="securityForm.newPassword" type="password" class="w-full bg-slate-50 border border-slate-200 rounded-lg p-3">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-bold text-slate-700 mb-1">确认新密码</label>
+                        <input v-model="securityForm.confirmPassword" type="password" class="w-full bg-slate-50 border border-slate-200 rounded-lg p-3">
+                    </div>
+                    <button @click="changePassword" class="w-full btn-gradient text-white font-bold py-3 rounded-lg shadow-lg mt-2">确认修改</button>
+                 </div>
+            </div>
+        </div>
+
+        <!-- 购物车页面 -->
+        <div v-if="view === 'cart'" class="animate-fade-in">
+            <div class="flex justify-between items-center mb-8">
+                <h2 class="text-2xl font-bold text-slate-800 tracking-tight flex items-center gap-2">
+                    <i class="ri-shopping-cart-2-line text-brand-500"></i> 购物车
+                </h2>
+                <button @click="clearCart" class="text-sm text-slate-500 hover:text-red-500 transition">
+                    <i class="ri-delete-bin-line"></i> 清空购物车
+                </button>
+            </div>
+
+            <div v-if="cartItems.length === 0" class="text-center py-20 bg-white rounded-2xl border border-dashed border-slate-200">
+                <i class="ri-shopping-cart-line text-6xl text-slate-300 mb-4 block"></i>
+                <h3 class="text-slate-600 font-medium mb-2">购物车是空的</h3>
+                <p class="text-slate-400 text-sm mb-6">快去挑选喜欢的商品吧</p>
+                <button @click="setView('home')" class="btn-gradient text-white font-bold py-2.5 px-6 rounded-lg">
+                    去逛逛
+                </button>
+            </div>
+
+            <div v-else class="space-y-4">
+                <div v-for="item in cartItems" :key="item.id" class="bg-white rounded-xl p-4 border border-slate-200 shadow-sm">
+                    <div class="flex flex-col md:flex-row md:items-center gap-4">
+                        <div class="w-20 h-20 bg-slate-100 rounded-lg overflow-hidden flex-shrink-0">
+                            <img v-if="getImgList(item).length > 0" :src="getImgList(item)[0]" class="w-full h-full object-cover">
+                            <div v-else class="w-full h-full flex items-center justify-center text-slate-300">
+                                <i class="ri-image-2-line text-2xl"></i>
+                            </div>
+                        </div>
+                        <div class="flex-1">
+                            <h3 class="font-bold text-slate-800 mb-1">{{ item.name }}</h3>
+                            <p class="text-sm text-slate-500 mb-2">{{ item.description.substring(0, 50) }}...</p>
+                            <div class="flex items-center justify-between">
+                                <div class="text-lg font-bold text-brand-600">{{ item.price }} USDT</div>
+                                <div class="flex items-center gap-2">
+                                    <button @click="updateCartQuantity(item, -1)" class="w-8 h-8 rounded-full bg-slate-100 text-slate-600 hover:bg-slate-200 transition">
+                                        <i class="ri-subtract-line"></i>
+                                    </button>
+                                    <span class="w-10 text-center font-bold">{{ item.quantity || 1 }}</span>
+                                    <button @click="updateCartQuantity(item, 1)" class="w-8 h-8 rounded-full bg-slate-100 text-slate-600 hover:bg-slate-200 transition">
+                                        <i class="ri-add-line"></i>
+                                    </button>
+                                    <button @click="removeFromCart(item)" class="ml-4 text-red-500 hover:text-red-700">
+                                        <i class="ri-delete-bin-line"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl p-6 border border-slate-200 shadow-sm">
+                    <div class="flex justify-between items-center mb-4">
+                        <span class="text-lg font-bold text-slate-800">合计</span>
+                        <div class="text-2xl font-bold text-brand-600">{{ cartTotal.toFixed(2) }} USDT</div>
+                    </div>
+                    <button @click="checkoutCart" class="w-full btn-gradient text-white font-bold py-3.5 rounded-xl shadow-lg shadow-brand-500/20 hover:-translate-y-1 transition">
+                        去结算 ({{ cartItems.length }}件商品)
+                    </button>
+                </div>
+            </div>
+        </div> 
+<div class="md:hidden fixed bottom-6 left-1/2 transform -translate-x-1/2 w-[90%] max-w-[380px] h-[68px] bg-white/75 backdrop-blur-2xl border border-white/40 rounded-full shadow-[0_8px_32px_rgba(0,0,0,0.12)] z-50 flex justify-around items-center px-2">
+    
+    <div @click="setView('home')" class="flex flex-col items-center justify-center w-16 h-full cursor-pointer transition-transform duration-200 active:scale-90" :class="view==='home' ? 'text-[#007aff]' : 'text-[#8e8e93]'">
+        <i class="text-[24px] mb-0.5" :class="view==='home' ? 'ri-home-4-fill' : 'ri-home-4-line'"></i>
+        <span class="text-[10px] font-medium tracking-tight">首页</span>
+    </div>
+
+    <div @click="checkLoginAndGo('orders_page')" class="flex flex-col items-center justify-center w-16 h-full cursor-pointer transition-transform duration-200 active:scale-90" :class="view==='orders_page' ? 'text-[#007aff]' : 'text-[#8e8e93]'">
+        <i class="text-[24px] mb-0.5" :class="view==='orders_page' ? 'ri-file-list-3-fill' : 'ri-file-list-3-line'"></i>
+        <span class="text-[10px] font-medium tracking-tight">订单</span>
+    </div>
+
+    <div @click="setView('hiring')" class="flex flex-col items-center justify-center w-16 h-full cursor-pointer transition-transform duration-200 active:scale-90" :class="view==='hiring' ? 'text-[#007aff]' : 'text-[#8e8e93]'">
+        <i class="text-[24px] mb-0.5" :class="view==='hiring' ? 'ri-briefcase-fill' : 'ri-briefcase-line'"></i>
+        <span class="text-[10px] font-medium tracking-tight">招聘</span>
+    </div>
+
+    <div @click="checkLoginAndGo('profile')" class="flex flex-col items-center justify-center w-16 h-full cursor-pointer transition-transform duration-200 active:scale-90" :class="view==='profile' && profileTab!=='orders' ? 'text-[#007aff]' : 'text-[#8e8e93]'">
+        <i class="text-[24px] mb-0.5" :class="view==='profile' && profileTab!=='orders' ? 'ri-user-3-fill' : 'ri-user-3-line'"></i>
+        <span class="text-[10px] font-medium tracking-tight">我的</span>
+    </div>
+
+</div>
+
+    </main> 
+
+    <!-- 客服悬浮窗 -->
+    <div class="chat-widget">
+        <div v-if="chatOpen" class="chat-window flex flex-col">
+            <div class="bg-brand-500 p-4 text-white flex justify-between items-center flex-shrink-0">
+                <span class="font-bold flex items-center gap-2"><i class="ri-customer-service-2-line"></i> 在线客服</span>
+                <button @click="chatOpen = false" class="hover:bg-brand-600 rounded-full w-6 h-6 flex items-center justify-center"><i class="ri-close-line"></i></button>
+            </div>
+            <div id="chat-msgs" class="flex-1 overflow-y-auto p-4 bg-slate-50 flex flex-col gap-2">
+                <div v-for="(msg, idx) in chatMessages" :key="idx" :class="['chat-msg', msg.sender === 'user' ? 'user' : 'admin']">
+                    <template v-if="msg.msg_type === 'image'">
+                        <img :src="msg.content" class="rounded-lg max-w-full cursor-pointer" @click="window.open(msg.content, '_blank')" style="max-height: 150px;">
+                    </template>
+                    <template v-else>
+                        {{ msg.content }}
+                    </template>
+                </div>
+                <div v-if="chatMessages.length === 0" class="text-center text-xs text-slate-400 mt-10">
+                    👋 你好，有什么可以帮您？
+                </div>
+            </div>
+           <div class="p-3 bg-white border-t border-slate-100 flex gap-2 flex-shrink-0 items-center">
+                <button @click="$refs.chatImgInput.click()" class="text-slate-400 hover:text-brand-500 p-1">
+                    <i class="ri-image-add-line text-xl"></i>
+                </button>
+                <input type="file" ref="chatImgInput" class="hidden" accept="image/*" @change="sendChatImage">
+
+                <input v-model="chatInput" @keypress.enter="sendMessage" placeholder="输入消息..." class="flex-1 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-brand-500">
+                <button @click="sendMessage" class="bg-brand-500 text-white rounded-lg px-3 py-2 hover:bg-brand-600"><i class="ri-send-plane-fill"></i></button>
+            </div>
+        </div>
+        <button @click="toggleChat" class="w-14 h-14 bg-gradient-to-r from-brand-500 to-brand-purple rounded-full shadow-lg text-white flex items-center justify-center text-2xl hover:scale-105 transition relative">
+            <i class="ri-chat-smile-3-line"></i>
+            <span v-if="unreadMessages > 0" class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">{{ unreadMessages }}</span>
+        </button>
+    </div>
+
+    <footer class="bg-white border-t border-slate-200 py-10 mt-auto">
+        <div class="max-w-7xl mx-auto px-4 text-center">
+            <div class="flex items-center justify-center gap-2 mb-4">
+                <div class="w-6 h-6 rounded bg-slate-200 flex items-center justify-center text-slate-500">
+                    <i class="ri-command-line text-xs"></i>
+                </div>
+                <span class="font-bold text-slate-1111">小暗网 XAW888.com</span>
+            </div>
+            <p class="text-xs text-slate-400">© {{ new Date().getFullYear() }} Dark Web  All Rights Reserved. </p>
+        </div>
+    </footer>
+
+    <!-- 商品详情模态框 -->
+    <transition name="modal">
+        <div v-if="productDetailModal.open" class="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4" @click.self="productDetailModal.open = false">
+            <div class="bg-white rounded-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden shadow-2xl flex flex-col md:flex-row modal-content relative">
+                <button @click="productDetailModal.open = false" class="absolute top-4 right-4 z-20 w-8 h-8 rounded-full bg-white/80 flex items-center justify-center text-slate-500 hover:text-slate-800 hover:bg-white transition shadow-sm">
+                    <i class="ri-close-line text-xl"></i>
+                </button>
+
+                <div class="w-full md:w-1/2 bg-slate-100 relative h-64 md:h-auto group select-none">
+                    <img v-if="currentProdImgs.length > 0" :src="currentProdImgs[currentImgIndex]" class="w-full h-full object-contain cursor-pointer" @click="nextImage">
+                    <div v-else class="w-full h-full flex items-center justify-center text-slate-300">
+                        <i class="ri-image-2-line text-6xl"></i>
+                    </div>
+                    
+                    <div v-if="currentProdImgs.length > 1">
+                        <div class="carousel-btn left" @click.stop="prevImage"><i class="ri-arrow-left-s-line"></i></div>
+                        <div class="carousel-btn right" @click.stop="nextImage"><i class="ri-arrow-right-s-line"></i></div>
+                        <div class="absolute bottom-4 left-0 w-full flex justify-center gap-2">
+                            <div v-for="(img, idx) in currentProdImgs" :key="idx" :class="['w-2 h-2 rounded-full transition', idx===currentImgIndex ? 'bg-brand-500' : 'bg-slate-300']"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="w-full md:w-1/2 p-8 flex flex-col overflow-y-auto">
+                    <div class="mb-1">
+                        <span class="bg-brand-50 text-brand-600 px-3 py-1 rounded-full text-xs font-bold">{{ productDetailModal.prod.category }}</span>
+                    </div>
+                    <h2 class="text-2xl font-bold text-slate-800 mb-4">{{ productDetailModal.prod.name }}</h2>
+                    
+                    <div class="bg-slate-50 p-4 rounded-xl mb-6">
+                        <div class="text-3xl font-bold text-brand-600 font-mono">
+                            {{ parseFloat(productDetailModal.prod.price || 0) }} 
+                            <span class="text-sm text-slate-500 font-sans font-normal">USDT</span>
+                        </div>
+                        <div class="text-sm text-slate-400 mt-1">≈ ¥{{ (productDetailModal.prod.price * settings.rate).toFixed(2) }} (汇率: {{settings.rate}})</div>
+                    </div>
+                  
+
+                    <div class="prose prose-sm text-slate-600 mb-8 flex-grow">
+                        <h4 class="text-sm font-bold text-slate-800 mb-2">商品详情</h4>
+                        <p class="whitespace-pre-wrap leading-relaxed">{{ productDetailModal.prod.description }}</p>
+                    </div>
+
+                    <div class="mt-auto pt-6 border-t border-slate-100">
+                        <div class="flex items-center justify-between mb-4">
+                            <span class="text-sm text-slate-500">库存状态</span>
+                            <span :class="productDetailModal.prod.stock > 0 ? 'text-emerald-600' : 'text-red-600'" class="font-bold text-sm">
+                                {{ productDetailModal.prod.stock > 0 ? `剩余 ${productDetailModal.prod.stock} 件` : '暂时缺货' }}
+                            </span>
+                        </div>
+                        <div class="flex flex-col gap-3">
+    <button @click="openBuyModal(productDetailModal.prod)" :disabled="productDetailModal.prod.stock <= 0" class="w-full btn-gradient text-white font-bold py-4 rounded-xl shadow-lg shadow-brand-500/20 disabled:opacity-50 disabled:shadow-none hover:-translate-y-0.5 transition flex items-center justify-center gap-2 text-base">
+        <i class="ri-flash-light-fill"></i> {{ productDetailModal.prod.stock > 0 ? '立即购买' : '暂时缺货' }}
+    </button>
+    
+    <button @click="addToCart(productDetailModal.prod)" :disabled="productDetailModal.prod.stock <= 0" class="w-full bg-white border-2 border-slate-100 text-slate-600 font-bold py-3.5 rounded-xl hover:bg-slate-50 hover:border-slate-200 hover:text-brand-600 transition disabled:opacity-50 flex items-center justify-center gap-2">
+        <i class="ri-shopping-cart-2-line"></i> 加入购物车
+    </button>
+</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </transition>
+ <transition name="modal">
+        <div v-if="inviteModal.open" class="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4" @click.self="inviteModal.open = false">
+            <div class="bg-white rounded-2xl w-full max-w-sm overflow-hidden shadow-2xl modal-content relative">
+                <div class="h-32 bg-gradient-to-br from-violet-500 to-fuchsia-600 relative flex flex-col items-center justify-center text-white p-6">
+                    <button @click="inviteModal.open = false" class="absolute top-4 right-4 text-white/80 hover:text-white bg-black/10 rounded-full w-8 h-8 flex items-center justify-center backdrop-blur-sm transition">
+                        <i class="ri-close-line text-xl"></i>
+                    </button>
+                    <i class="ri-gift-2-fill text-5xl mb-2 drop-shadow-md"></i>
+                    <h3 class="text-xl font-bold tracking-wide drop-shadow-md">邀请好友 赚取佣金</h3>
+                </div>
+
+                <div class="p-6 relative">
+                    <div class="bg-white border border-slate-100 rounded-xl shadow-lg -mt-12 p-5 text-center relative z-10">
+                        <p class="text-xs text-slate-400 mb-2 uppercase tracking-wider">您的专属邀请码</p>
+                        <div class="flex items-center justify-center gap-3 mb-4">
+                            <span class="text-3xl font-mono font-bold text-slate-800 tracking-widest border-b-2 border-violet-100 pb-1">
+                                {{ user.inviteCode || '请先登录' }}
+                            </span>
+                        </div>
+                        <button @click="navigator.clipboard.writeText(user.inviteCode); Swal.fire({icon:'success', title:'复制成功', timer:1000, showConfirmButton:false})" class="w-full btn-gradient text-white font-bold py-2.5 rounded-lg shadow-violet-500/30 shadow-lg hover:-translate-y-0.5 transition flex items-center justify-center gap-2 text-sm">
+                            <i class="ri-file-copy-line"></i> 复制邀请码
+                        </button>
+                    </div>
+
+                    <div class="mt-6 space-y-4">
+                        <div class="flex gap-4 items-start">
+                            <div class="w-10 h-10 rounded-full bg-violet-50 text-violet-500 flex items-center justify-center shrink-0">
+                                <i class="ri-user-add-line text-lg"></i>
+                            </div>
+                            <div>
+                                <h4 class="font-bold text-slate-800 text-sm">1. 邀请好友注册</h4>
+                                <p class="text-xs text-slate-500 mt-1 leading-relaxed">
+                                    让好友在注册时输入您的邀请码，系统将自动绑定你们的邀请关系。
+                                </p>
+                            </div>
+                        </div>
+                        <div class="flex gap-4 items-start">
+                            <div class="w-10 h-10 rounded-full bg-fuchsia-50 text-fuchsia-500 flex items-center justify-center shrink-0">
+                                <i class="ri-money-dollar-circle-line text-lg"></i>
+                            </div>
+                            <div>
+                                <h4 class="font-bold text-slate-800 text-sm">2. 获得 5% 佣金</h4>
+                                <p class="text-xs text-slate-500 mt-1 leading-relaxed">
+                                    当您的好友进行充值或消费时，您将直接获得 5% 的现金返利到余额。可提现可购物
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </transition>
+
+    <!-- 认证模态框 -->
+    <transition name="modal">
+        <div v-if="authModal.open" class="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4" @click.self="authModal.open = false">
+            <div class="bg-white rounded-2xl w-full max-w-[400px] p-8 shadow-2xl modal-content relative">
+                <div class="flex justify-between items-center mb-6">
+                    <h3 class="text-xl font-bold text-slate-800">{{ authModal.mode === 'login' ? '用户登录' : '用户注册' }}</h3>
+                    <button @click="authModal.open = false" class="text-slate-400 hover:text-slate-600">
+                        <i class="ri-close-line text-2xl"></i>
+                    </button>
+                </div>
+
+                <form @submit.prevent="handleAuth" class="space-y-5">
+                    <div>
+                        <label class="block text-sm font-bold text-slate-700 mb-1.5">账号</label>
+                        <input v-model="authForm.contact" required type="text" placeholder="请输入邮箱或Telrgram" class="w-full bg-white border border-slate-200 rounded-lg p-3 text-slate-800 focus:border-brand-500 focus:ring-2 focus:ring-brand-50 focus:outline-none transition text-sm">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-bold text-slate-700 mb-1.5">密码</label>
+                        <input v-model="authForm.password" required type="password" placeholder="请输入密码 (至少6位)" class="w-full bg-white border border-slate-200 rounded-lg p-3 text-slate-800 focus:border-brand-500 focus:ring-2 focus:ring-brand-50 focus:outline-none transition text-sm">
+                    </div>
+                    
+                   <div v-if="authModal.mode === 'register'">
+                        <label class="block text-sm font-bold text-slate-700 mb-1.5">确认密码</label>
+                        <input v-model="authForm.confirmPassword" required type="password" placeholder="请再次输入密码" class="w-full bg-white border border-slate-200 rounded-lg p-3 text-slate-800 focus:border-brand-500 focus:ring-2 focus:ring-brand-50 focus:outline-none transition text-sm">
+                    </div>
+
+                    <div v-if="authModal.mode === 'register'">
+                        <label class="block text-sm font-bold text-slate-700 mb-1.5">邀请码 (选填)</label>
+                        <input v-model="authForm.inviteCode" type="text" placeholder="请输入邀请码" class="w-full bg-white border border-slate-200 rounded-lg p-3 text-slate-800 focus:border-brand-500 focus:ring-2 focus:ring-brand-50 focus:outline-none transition text-sm">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-bold text-slate-700 mb-1.5">人机验证</label>
+                        <div class="flex gap-3 mb-3">
+                            <div class="flex-1 captcha-display h-11 rounded-lg border border-brand-100 flex items-center justify-center text-xl tracking-[0.5em] shadow-inner">
+                                {{ captcha.display }}
+                            </div>
+                            <button type="button" @click="genCaptcha" class="w-11 h-11 bg-brand-500 rounded-lg text-white hover:bg-brand-600 transition flex items-center justify-center shadow-md shadow-brand-500/20">
+                                <i class="ri-refresh-line text-lg"></i>
+                            </button>
+                        </div>
+                        <input v-model="authForm.captchaInput" required type="text" placeholder="请输入上方验证码" class="w-full bg-white border border-slate-200 rounded-lg p-3 text-slate-800 focus:border-brand-500 focus:ring-2 focus:ring-brand-50 focus:outline-none transition text-sm">
+                    </div>
+                    <button type="submit" :disabled="authSubmitting" class="w-full btn-gradient text-white font-bold py-3 rounded-lg shadow-lg shadow-brand-500/25 disabled:opacity-50 flex justify-center text-sm tracking-wide mt-2">
+                        <span v-if="authSubmitting" class="animate-spin mr-2"><i class="ri-loader-4-line"></i></span>
+                        {{ authModal.mode === 'login' ? '登录' : '注册' }}
+                    </button>
+                </form>
+                
+                <div class="mt-6 text-center text-sm">
+                    <span v-if="authModal.mode === 'login'" class="text-slate-500">还没有账号？ <a @click="toggleAuthMode" class="text-brand-600 font-bold cursor-pointer hover:underline">立即注册</a></span>
+                    <span v-else class="text-slate-500">已有账号？ <a @click="toggleAuthMode" class="text-brand-600 font-bold cursor-pointer hover:underline">立即登录</a></span>
+                </div>
+            </div>
+        </div>
+    </transition>
+
+    <!-- 购买模态框 -->
+    <transition name="modal">
+        <div v-if="buyModal.open" class="fixed inset-0 z-[100] flex items-end sm:items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 sm:p-4" @click.self="buyModal.open = false">
+            <div class="bg-white rounded-t-2xl sm:rounded-2xl w-full max-w-lg max-h-[85vh] flex flex-col modal-content relative shadow-2xl">
+                <div class="p-4 border-b border-slate-100 flex justify-between items-center shrink-0">
+                    <div>
+                        <h3 class="text-lg font-bold text-slate-800">确认订单</h3>
+                        <p class="text-xs text-slate-500 mt-0.5">商品: {{ buyModal.prod.name }}</p>
+                    </div>
+                    <button @click="buyModal.open = false" class="text-slate-400 hover:text-slate-600"><i class="ri-close-line text-2xl"></i></button>
+                </div>
+                
+                <div class="p-6 space-y-5 overflow-y-auto">
+                    <div>
+                        <label class="block text-sm font-bold text-brand-600 mb-2">
+                            <i class="ri-mail-send-line"></i> 联系方式 (必填)
+                        </label>
+                        <input v-model="buyForm.contactInfo" placeholder="请输入您的邮箱或 Telegram 用户名" class="w-full bg-white border border-brand-200 rounded-lg p-3 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-50 focus:outline-none transition">
+                        <p class="text-xs text-slate-400 mt-1">用于接收发货通知或售后联系</p>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-bold text-slate-700 mb-3">选择支付方式</label>
+                        <div class="grid grid-cols-3 gap-3">
+                            <div @click="buyForm.method = 'USDT'" :class="buyForm.method === 'USDT' ? 'border-brand-500 bg-brand-50 text-brand-700 ring-1 ring-brand-500' : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300'" class="border rounded-xl p-4 cursor-pointer transition flex flex-col items-center gap-2 text-center">
+                                <i class="ri-money-dollar-circle-line text-2xl" :class="buyForm.method==='USDT'?'text-brand-600':'text-slate-400'"></i>
+                                <div>
+                                    <div class="text-sm font-bold">USDT (TRC20)</div>
+                                    <div class="text-[10px] opacity-70">到账快 / 推荐</div>
+                                </div>
+                            </div>
+                            <div @click="buyForm.method = 'WeChat'" :class="buyForm.method === 'WeChat' ? 'border-brand-500 bg-brand-50 text-brand-700 ring-1 ring-brand-500' : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300'" class="border rounded-xl p-4 cursor-pointer transition flex flex-col items-center gap-2 text-center">
+                                <i class="ri-wechat-pay-line text-2xl" :class="buyForm.method==='WeChat'?'text-brand-600':'text-slate-400'"></i>
+                                <div>
+                                    <div class="text-sm font-bold">微信支付</div>
+                                    <div class="text-[10px] opacity-70">人工核实到账</div>
+                                </div>
+                            </div>
+                            <div @click="buyForm.method = 'Alipay'" :class="buyForm.method === 'Alipay' ? 'border-brand-500 bg-brand-50 text-brand-700 ring-1 ring-brand-500' : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300'" class="border rounded-xl p-4 cursor-pointer transition flex flex-col items-center gap-2 text-center">
+                                <i class="ri-alipay-line text-2xl" :class="buyForm.method==='Alipay'?'text-brand-600':'text-slate-400'"></i>
+                                <div>
+                                    <div class="text-sm font-bold">支付宝</div>
+                                    <div class="text-[10px] opacity-70">人工核实到账</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 余额支付选项 -->
+                    <div v-if="user.balance > 0" class="bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-100 p-4 rounded-xl">
+                        <div class="flex items-center justify-between mb-2">
+                            <div class="font-bold text-emerald-800 flex items-center gap-1"><i class="ri-wallet-3-fill"></i> 账户余额</div>
+                            <div class="font-mono text-emerald-600">{{ (user.balance || 0).toFixed(2) }} USDT</div>
+                        </div>
+                        
+                        <label class="flex items-center justify-between cursor-pointer bg-white p-3 rounded-lg border border-emerald-200 shadow-sm hover:border-emerald-400 transition">
+                            <div class="flex items-center gap-2">
+                                <input type="checkbox" v-model="buyForm.useBalance" @change="buyForm.balanceAmount = buyForm.useBalance ? Math.min(user.balance, buyModal.prod.price) : 0" class="w-5 h-5 text-brand-600 rounded focus:ring-brand-500">
+                                <span class="text-sm font-bold text-slate-700">开启组合支付 (抵扣余额)</span>
+                            </div>
+                            <div v-if="buyForm.useBalance" class="text-sm font-bold text-red-500">
+                                - {{ Math.min(user.balance, buyModal.prod.price).toFixed(2) }}
+                            </div>
+                        </label>
+                        <p v-if="buyForm.useBalance" class="text-[10px] text-emerald-600 mt-2 text-right">
+                            * 系统自动计算最大可抵扣金额
+                        </p>
+                    </div>
+
+                    <div class="bg-slate-50 p-4 rounded-xl border border-slate-100">
+                        <div class="flex justify-between text-sm mb-2">
+                            <span class="text-slate-500">商品单价:</span>
+                            <span class="text-slate-800 font-mono">{{ buyModal.prod.price }} USDT</span>
+                        </div>
+                        <div v-if="buyForm.method !== 'USDT'" class="flex justify-between text-sm mb-2">
+                            <span class="text-slate-500">当前汇率:</span>
+                            <span class="text-slate-800 font-mono">{{ settings.rate }}</span>
+                        </div>
+                        <div v-if="buyForm.method !== 'USDT' && settings.feeRate > 0" class="flex justify-between text-sm mb-2">
+                            <span class="text-slate-500">手续费 ({{ settings.feeRate }}%):</span>
+                            <span class="text-red-500 font-mono">+ ¥{{ ((buyModal.prod.price * settings.rate) * (settings.feeRate/100)).toFixed(2) }}</span>
+                        </div>
+                        <div v-if="buyForm.useBalance && buyForm.balanceAmount > 0" class="flex justify-between text-sm mb-2">
+                            <span class="text-slate-500">余额抵扣:</span>
+                            <span class="text-emerald-500 font-mono">- {{ buyForm.balanceAmount }} USDT</span>
+                        </div>
+                        <div class="border-t border-slate-200 my-3"></div>
+                        <div class="flex justify-between items-end">
+                            <span class="text-slate-800 font-bold text-sm">应付金额:</span>
+                            <span class="text-2xl font-bold text-brand-600 font-mono">
+                                {{ calculateFinalAmount(buyModal.prod.price) }}
+                            </span>
+                        </div>
+                    </div>
+
+                    <div v-if="buyModal.prod.type === 'physical'" class="animate-fade-in-up">
+                        <label class="block text-xs text-orange-500 mb-2 font-bold flex items-center gap-1">
+                            <i class="ri-truck-line"></i> 收货信息 (实物商品必填)
+                        </label>
+                        <div class="space-y-2">
+                            <div class="flex gap-2">
+                                <input v-model="buyForm.shipName" placeholder="收件人姓名" class="flex-1 bg-white border border-slate-200 rounded-lg p-2.5 text-sm focus:border-brand-500 focus:outline-none">
+                                <input v-model="buyForm.shipTel" placeholder="联系电话" class="flex-1 bg-white border border-slate-200 rounded-lg p-2.5 text-sm focus:border-brand-500 focus:outline-none">
+                            </div>
+                            <textarea v-model="buyForm.shipAddr" placeholder="详细收货地址 (省/市/区/街道/门牌)" class="w-full bg-white border border-slate-200 rounded-lg p-2.5 text-sm focus:border-brand-500 focus:outline-none h-20 resize-none"></textarea>
+                        </div>
+                    </div>
+
+                    <button @click="submitOrder" :disabled="orderSubmitting" class="w-full btn-gradient text-white font-bold py-3.5 rounded-xl shadow-lg shadow-brand-500/20 disabled:opacity-50 flex justify-center text-sm tracking-wide shrink-0 mb-safe">
+                        <span v-if="orderSubmitting" class="animate-spin mr-2"><i class="ri-loader-4-line"></i></span>
+                        提交订单
+                    </button>
+                </div>
+            </div>
+        </div>
+    </transition>
+
+    <!-- 充值模态框 -->
+    <transition name="modal">
+        <div v-if="rechargeModal.open" class="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4" @click.self="rechargeModal.open = false">
+            <div class="bg-white rounded-2xl w-full max-w-lg p-6 modal-content relative shadow-2xl">
+                <button @click="rechargeModal.open = false" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600"><i class="ri-close-line text-2xl"></i></button>
+                
+                <h3 class="text-lg font-bold text-slate-800 mb-1">账户充值</h3>
+                <p class="text-sm text-slate-500 mb-6 border-b border-slate-100 pb-4">充值金额将进入您的账户余额</p>
+                
+                <div class="space-y-5">
+                    <div>
+                        <label class="block text-sm font-bold text-slate-700 mb-2">充值金额 (USDT)</label>
+                        <input v-model.number="rechargeForm.amount" type="number" min="1" step="0.0001" placeholder="请输入充值金额" class="w-full bg-slate-50 border border-slate-200 rounded-lg p-3 text-slate-800 focus:border-brand-500 focus:ring-2 focus:ring-brand-50 focus:outline-none transition">
+                        <div class="text-sm text-slate-400 mt-1">≈ ¥{{ (rechargeForm.amount * settings.rate).toFixed(2) }} (汇率: {{settings.rate}})</div>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-bold text-slate-700 mb-3">选择支付方式</label>
+                        <div class="grid grid-cols-3 gap-3">
+                            <div @click="rechargeForm.method = 'USDT'" :class="rechargeForm.method === 'USDT' ? 'border-brand-500 bg-brand-50 text-brand-700 ring-1 ring-brand-500' : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300'" class="border rounded-xl p-4 cursor-pointer transition flex flex-col items-center gap-2 text-center">
+                                <i class="ri-money-dollar-circle-line text-2xl" :class="rechargeForm.method==='USDT'?'text-brand-600':'text-slate-400'"></i>
+                                <div>
+                                    <div class="text-sm font-bold">USDT</div>
+                                    <div class="text-[10px] opacity-70">自动到账</div>
+                                </div>
+                            </div>
+                            <div @click="rechargeForm.method = 'WeChat'" :class="rechargeForm.method === 'WeChat' ? 'border-brand-500 bg-brand-50 text-brand-700 ring-1 ring-brand-500' : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300'" class="border rounded-xl p-4 cursor-pointer transition flex flex-col items-center gap-2 text-center">
+                                <i class="ri-wechat-pay-line text-2xl" :class="rechargeForm.method==='WeChat'?'text-brand-600':'text-slate-400'"></i>
+                                <div>
+                                    <div class="text-sm font-bold">微信</div>
+                                    <div class="text-[10px] opacity-70">人工核实到账</div>
+                                </div>
+                            </div>
+                            <div @click="rechargeForm.method = 'Alipay'" :class="rechargeForm.method === 'Alipay' ? 'border-brand-500 bg-brand-50 text-brand-700 ring-1 ring-brand-500' : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300'" class="border rounded-xl p-4 cursor-pointer transition flex flex-col items-center gap-2 text-center">
+                                <i class="ri-alipay-line text-2xl" :class="rechargeForm.method==='Alipay'?'text-brand-600':'text-slate-400'"></i>
+                                <div>
+                                    <div class="text-sm font-bold">支付宝</div>
+                                    <div class="text-[10px] opacity-70">人工核实到账</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button @click="submitRecharge" :disabled="rechargeSubmitting" class="w-full btn-gradient text-white font-bold py-3.5 rounded-xl shadow-lg shadow-brand-500/20 disabled:opacity-50 flex justify-center text-sm tracking-wide">
+                        <span v-if="rechargeSubmitting" class="animate-spin mr-2"><i class="ri-loader-4-line"></i></span>
+                        确认充值
+                    </button>
+                </div>
+            </div>
+        </div>
+    </transition>
+
+    <!-- 提现模态框 -->
+    <transition name="modal">
+        <div v-if="withdrawModal.open" class="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4" @click.self="withdrawModal.open = false">
+            <div class="bg-white rounded-2xl w-full max-w-lg p-6 modal-content relative shadow-2xl">
+                <button @click="withdrawModal.open = false" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600"><i class="ri-close-line text-2xl"></i></button>
+                
+               <h3 class="text-lg font-bold text-slate-800 mb-1">余额提现</h3>
+<p class="text-sm text-slate-500 mb-6 border-b border-slate-100 pb-4">可提现余额: <span class="font-bold text-emerald-600">{{ parseFloat(user.balance || 0).toFixed(2) }} USDT</span></p>
+                
+                <div class="space-y-5">
+                    <div>
+                        <label class="block text-sm font-bold text-slate-700 mb-2">提现方式</label>
+                        <div class="grid grid-cols-3 gap-2 mb-4">
+                            <div @click="withdrawForm.method = 'USDT'" :class="withdrawForm.method === 'USDT' ? 'border-brand-500 bg-brand-50 text-brand-600 ring-1 ring-brand-500' : 'border-slate-200'" class="border rounded-lg p-3 text-center cursor-pointer text-sm font-bold transition">USDT</div>
+                            <div @click="withdrawForm.method = 'WeChat'" :class="withdrawForm.method === 'WeChat' ? 'border-brand-500 bg-brand-50 text-brand-600 ring-1 ring-brand-500' : 'border-slate-200'" class="border rounded-lg p-3 text-center cursor-pointer text-sm font-bold transition">微信</div>
+                            <div @click="withdrawForm.method = 'Alipay'" :class="withdrawForm.method === 'Alipay' ? 'border-brand-500 bg-brand-50 text-brand-600 ring-1 ring-brand-500' : 'border-slate-200'" class="border rounded-lg p-3 text-center cursor-pointer text-sm font-bold transition">支付宝</div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-bold text-slate-700 mb-2">提现金额 (USDT)</label>
+                        <input v-model.number="withdrawForm.amount" type="number" :max="user.balance" min="5" step="0.01" placeholder="最低 5 USDT" class="w-full bg-slate-50 border border-slate-200 rounded-lg p-3 text-slate-800 focus:border-brand-500 focus:ring-2 focus:ring-brand-50 focus:outline-none transition">
+                    </div>
+
+                    <div class="bg-slate-50 p-3 rounded-lg border border-slate-200 space-y-2 text-sm">
+                        <div class="flex justify-between">
+                            <span class="text-slate-500">提现汇率</span>
+                            <span class="font-mono">{{ settings.rate }}</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-slate-500">手续费 ({{ withdrawForm.method === 'USDT' ? '0%' : '2%' }})</span>
+                            <span class="text-red-500 font-mono">- {{ withdrawCalc.fee }}</span>
+                        </div>
+                        <div class="flex justify-between border-t border-slate-200 pt-2">
+                            <span class="font-bold text-slate-800">预计到账</span>
+                            <span class="font-bold text-emerald-600 font-mono">{{ withdrawCalc.final }}</span>
+                        </div>
+                    </div>
+
+                    <div v-if="withdrawForm.method === 'USDT'">
+                        <label class="block text-sm font-bold text-slate-700 mb-2">TRC20 收款地址</label>
+                        <input v-model="withdrawForm.address" type="text" placeholder="T开头..." class="w-full bg-slate-50 border border-slate-200 rounded-lg p-3 text-slate-800 focus:border-brand-500 focus:ring-2 focus:ring-brand-50 focus:outline-none transition mb-2">
+                        <label class="flex items-center gap-2 text-xs text-slate-500 bg-orange-50 p-2 rounded border border-orange-100 cursor-pointer">
+                            <input type="checkbox" v-model="withdrawForm.confirmAddr" class="w-4 h-4 text-brand-600 rounded">
+                            <span>请确认地址是否正确，地址错误打款了概不负责</span>
+                        </label>
+                    </div>
+
+                    <div v-else>
+                        <label class="block text-sm font-bold text-slate-700 mb-2">上传收款码 </label>
+                        <input v-model="withdrawForm.address" type="text" placeholder="账号 (选填)" class="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 text-sm mb-2">
+                        <div class="border-2 border-dashed border-slate-300 rounded-lg p-4 text-center hover:bg-slate-50 transition cursor-pointer relative">
+                            <input type="file" accept="image/*" @change="handleWithdrawFile" class="absolute inset-0 opacity-0 cursor-pointer w-full h-full">
+                            <div v-if="withdrawForm.preview" class="flex flex-col items-center">
+                                <img :src="withdrawForm.preview" class="h-24 object-contain rounded mb-2 border">
+                                <span class="text-xs text-emerald-500">已选择图片</span>
+                            </div>
+                            <div v-else class="flex flex-col items-center text-slate-400">
+                                <i class="ri-qr-code-line text-3xl mb-1"></i>
+                                <span class="text-xs">点击上传收款码</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-yellow-50 border border-yellow-100 p-3 rounded-lg">
+                        <div class="text-xs text-yellow-700">
+                            <i class="ri-alert-line"></i> 提现申请提交后，客服稍后会处理。最小提现金额为1 USDT，手续费为1 USDT。
+                        </div>
+                    </div>
+
+                    <button @click="submitWithdraw" :disabled="withdrawSubmitting || withdrawForm.amount > (user.balance || 0)" class="w-full btn-gradient text-white font-bold py-3.5 rounded-xl shadow-lg shadow-brand-500/20 disabled:opacity-50 flex justify-center text-sm tracking-wide">
+                        <span v-if="withdrawSubmitting" class="animate-spin mr-2"><i class="ri-loader-4-line"></i></span>
+                        提交提现申请
+                    </button>
+                </div>
+            </div>
+        </div>
+    </transition>
+
+    <!-- 支付成功凭证上传模态框 -->
+    <transition name="modal">
+        <div v-if="paymentProofModal.open" class="fixed inset-0 z-[100] flex items-end sm:items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4" @click.self="paymentProofModal.open = false">
+            <div class="bg-white rounded-t-2xl sm:rounded-2xl w-full max-w-md modal-content relative shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+                <div class="bg-gradient-to-r from-brand-500 to-brand-purple p-6 text-white text-center relative shrink-0">
+                    <button @click="paymentProofModal.open = false" class="absolute top-4 right-4 text-white/70 hover:text-white bg-black/10 rounded-full w-8 h-8 flex items-center justify-center transition">
+                        <i class="ri-close-line text-xl"></i>
+                    </button>
+                    <div class="w-14 h-14 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-3 backdrop-blur-sm">
+                        <i class="ri-secure-payment-fill text-3xl"></i>
+                    </div>
+                    <h3 class="text-xl font-bold">提交支付凭证</h3>
+                    <p class="text-xs text-blue-100 mt-1 font-mono tracking-wide opacity-80">ORDER: {{ paymentProofModal.orderId }}</p>
+                </div>
+                
+                <div class="p-6 space-y-6 overflow-y-auto">
+                    <div class="relative group">
+                        <input type="file" id="payment-proof" accept="image/*" @change="handlePaymentProof" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10">
+                        <div class="border-2 border-dashed border-slate-300 rounded-xl p-8 text-center transition duration-300 group-hover:border-brand-500 group-hover:bg-brand-50" :class="{'border-emerald-500 bg-emerald-50': paymentProofModal.proofUrl}">
+                            
+                            <div v-if="!paymentProofModal.proofUrl">
+                                <div class="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition duration-300">
+                                    <i class="ri-image-add-line text-3xl text-slate-400 group-hover:text-brand-500"></i>
+                                </div>
+                                <h4 class="font-bold text-slate-700 mb-1">点击上传截图</h4>
+                                <p class="text-xs text-slate-400">支持 JPG, PNG (最大 5MB)</p>
+                            </div>
+
+                            <div v-else class="relative">
+                                <img :src="paymentProofModal.proofUrl" class="w-full h-48 object-contain rounded-lg shadow-sm bg-white">
+                                <div class="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 transition rounded-lg">
+                                    <span class="text-white font-bold text-sm"><i class="ri-refresh-line"></i> 更换图片</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-orange-50 border border-orange-100 rounded-lg p-3 flex gap-3 items-start">
+                        <i class="ri-alert-line text-orange-500 mt-0.5"></i>
+                        <div class="text-xs text-orange-700 leading-relaxed">
+                            请确保截图清晰包含 <span class="font-bold">转账金额</span> 和 <span class="font-bold">时间</span>。恶意上传无关图片可能导致封号。
+                        </div>
+                    </div>
+
+                    <button @click="submitPaymentProof" :disabled="paymentProofSubmitting || !paymentProofModal.proofUrl" class="w-full btn-gradient text-white font-bold py-4 rounded-xl shadow-lg shadow-brand-500/25 hover:-translate-y-0.5 transition flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
+                        <span v-if="paymentProofSubmitting" class="animate-spin"><i class="ri-loader-4-line"></i></span>
+                        <span v-else><i class="ri-send-plane-fill"></i> 确认提交</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </transition>
+
+    <!-- 记录模态框 -->
+    <transition name="modal">
+        <div v-if="recordModal.open" class="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4" @click.self="recordModal.open = false">
+            <div class="bg-white rounded-2xl w-full max-w-lg max-h-[80vh] flex flex-col shadow-2xl modal-content">
+                <div class="p-4 border-b border-slate-100 flex justify-between items-center">
+                    <h3 class="text-lg font-bold text-slate-800">{{ recordModal.title }}</h3>
+                    <button @click="recordModal.open = false"><i class="ri-close-line text-2xl text-slate-400"></i></button>
+                </div>
+                <div class="flex-1 overflow-y-auto p-4">
+                    <div v-if="recordModal.loading" class="text-center py-10 text-slate-400">加载中...</div>
+                    <div v-else-if="recordModal.list.length === 0" class="text-center py-10 text-slate-400">暂无记录</div>
+                    <div v-else class="space-y-3">
+                        <div v-for="(item, idx) in recordModal.list" :key="idx" class="bg-slate-50 rounded-xl p-4 border border-slate-100">
+                            <div class="flex justify-between items-start mb-2">
+                                <div>
+                                    <div class="text-xs text-slate-400">{{ formatDate(item.created_at) }}</div>
+                                    <div class="font-bold text-slate-700" v-if="item.order_id">单号: {{ item.order_id }}</div>
+                                    <div class="font-bold text-slate-700" v-else>提现申请</div>
+                                </div>
+                                <div class="text-right">
+                                    <div class="font-bold text-lg" :class="recordModal.type==='recharge'?'text-emerald-600':'text-orange-600'">
+                                        {{ recordModal.type==='recharge' ? '+' : '-' }}{{ parseFloat(item.amount || item.usdt_amount || 0).toFixed(2) }}
+                                    </div>
+                                    <span class="text-xs bg-white border px-2 py-0.5 rounded">{{ item.status }}</span>
+                                    
+                                    <button v-if="recordModal.type === 'recharge' && item.status === '待支付'" @click="continueRecharge(item)" class="block mt-2 text-xs bg-brand-500 text-white px-3 py-1.5 rounded shadow-sm hover:bg-brand-600 transition ml-auto">
+                                        去支付 <i class="ri-arrow-right-line"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div v-if="item.address" class="text-xs text-slate-400 break-all">地址: {{ item.address }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </transition>
+<transition name="modal">
+        <div v-if="balanceLogModal.open" class="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4" @click.self="balanceLogModal.open = false">
+            <div class="bg-white rounded-2xl w-full max-w-lg max-h-[80vh] flex flex-col shadow-2xl modal-content">
+                <div class="p-4 border-b border-slate-100 flex justify-between items-center">
+                    <h3 class="text-lg font-bold text-slate-800">资金变动明细</h3>
+                    <button @click="balanceLogModal.open = false"><i class="ri-close-line text-2xl text-slate-400"></i></button>
+                </div>
+                <div class="flex-1 overflow-y-auto p-4">
+                    <div v-if="balanceLogModal.loading" class="text-center py-10 text-slate-400">
+                        <i class="ri-loader-4-line animate-spin text-2xl mb-2 block"></i>
+                        加载中...
+                    </div>
+                    <div v-else-if="balanceLogModal.list.length === 0" class="text-center py-10 text-slate-400">
+                        <i class="ri-file-list-3-line text-4xl mb-2 block opacity-50"></i>
+                        暂无资金变动
+                    </div>
+                    <div v-else class="space-y-3">
+                        <div v-for="(log, idx) in balanceLogModal.list" :key="idx" class="bg-slate-50 rounded-xl p-4 border border-slate-100 flex justify-between items-center">
+                            <div>
+                                <div class="font-bold text-slate-700 text-sm mb-1">{{ log.description || log.type }}</div>
+                                <div class="text-xs text-slate-400">{{ formatDate(log.created_at) }}</div>
+                            </div>
+                            <div class="text-right">
+                                <div class="font-mono font-bold text-lg" :class="parseFloat(log.amount) >= 0 ? 'text-emerald-600' : 'text-slate-800'">
+                                    {{ parseFloat(log.amount) > 0 ? '+' : '' }}{{ parseFloat(log.amount) }} USDT
+                                </div>
+                                <div class="text-xs text-slate-400" v-if="log.balance_after">
+                                    余额: {{ parseFloat(log.balance_after) }} USDT
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </transition>
+</div>
+<script>
+    const API_BASE = "https://wzmdxd.onrender.com";  
+
+const app = Vue.createApp({
+        data() {
+            return {
+                view: 'home', 
+                profileTab: 'orders',
+                user: JSON.parse(localStorage.getItem('nexus_user') || '{}'),
+
+                products: [],
+                categories: [],
+                hiringList: [],
+                myOrders: [],
+                settings: { rate: 7.0, feeRate: 0, announcement: '', showPopup: false },
+                
+                loading: true,
+                searchQuery: '',
+                filterCat: 'all',
+               mobileMenuOpen: false,
+
+                // Invite
+                inviteModal: { open: false },
+
+                // Auth
+                authModal: { open: false, mode: 'login' }, 
+                authForm: { contact: '', password: '', confirmPassword: '', captchaInput: '', inviteCode: '' },
+                authSubmitting: false,
+                captcha: { display: '', value: '' },
+
+                // Product Detail
+                productDetailModal: { open: false, prod: {} },
+                currentImgIndex: 0,
+
+                // Chat
+                chatOpen: false,
+                chatInput: '',
+                chatMessages: [],
+                chatPollTimer: null,
+                chatSessionId: localStorage.getItem('chat_session_id') || 'guest_' + Date.now(),
+                unreadMessages: 0,
+                messageSound: new Audio('https://assets.mixkit.co/sfx/preview/mixkit-correct-answer-tone-2870.mp3'),
+
+               // Buy
+                buyModal: { open: false, prod: {} },
+                buyForm: { method: 'USDT', shipName: '', shipTel: '', shipAddr: '', useBalance: false, balanceAmount: 0, contactInfo: '' },
+                orderSubmitting: false,
+
+                // Recharge
+                rechargeModal: { open: false },
+                rechargeForm: { amount: 10, method: 'USDT' },
+                rechargeSubmitting: false,
+
+               // Withdraw
+                withdrawModal: { open: false },
+                withdrawForm: { amount: 0, address: '', method: 'USDT' },
+                withdrawSubmitting: false,
+
+                recordModal: { open: false, title: '', list: [], loading: false, type: '' },
+
+                // Payment Proof
+                paymentProofModal: { open: false, orderId: '', proofUrl: '' },
+                paymentProofSubmitting: false,
+
+                // Security
+                securityForm: { oldPassword: '', newPassword: '', confirmPassword: '' },
+
+                // Balance Logs
+                balanceLogModal: { open: false, list: [], loading: false },
+
+                // Cart
+                cartItems: JSON.parse(localStorage.getItem('nexus_cart') || '[]'),
+                
+                // Order Timers
+                orderTimers: {},
+                notifiedQRCodes: JSON.parse(sessionStorage.getItem('notified_qrs') || '[]'),
+                chatInitialized: false,
+                socket: null,
+            }
+        },
+        computed: {
+            filteredProducts() {
+                let list = this.products;
+                if (this.searchQuery) {
+                    const q = this.searchQuery.toLowerCase();
+                    list = list.filter(p => p.name.toLowerCase().includes(q) || p.description.toLowerCase().includes(q));
+                }
+                if (this.filterCat !== 'all') {
+                    list = list.filter(p => p.category === this.filterCat);
+                }
+                return list;
+            },
+            currentProdImgs() {
+                return this.getImgList(this.productDetailModal.prod);
+            },
+           cartTotal() {
+    const total = this.cartItems.reduce((acc, item) => {
+        return acc + (parseFloat(item.price) * (item.quantity || 1));
+    }, 0);
+    return parseFloat(total.toFixed(2));
+},
+withdrawCalc() {
+    const amt = parseFloat(this.withdrawForm.amount) || 0;
+    const isUsdt = this.withdrawForm.method === 'USDT';
+    // 统一手续费计算逻辑
+    const feePercent = isUsdt ? 0 : 0.02;
+    const feeVal = amt * feePercent;
+    
+    // 计算最终金额
+    const finalAmount = amt - feeVal;
+    
+    let finalVal = "";
+    let feeDisplay = "";
+
+    if (isUsdt) {
+        // USDT 模式：强制 2 位小数显示
+        finalVal = finalAmount.toFixed(2) + ' USDT';
+        feeDisplay = feeVal.toFixed(2) + ' USDT';
+    } else {
+        // 微信/支付宝模式：计算人民币金额
+        const cnyVal = finalAmount * this.settings.rate;
+        finalVal = '¥' + cnyVal.toFixed(2);
+        // 手续费部分显示：USDT金额 + 人民币估值
+        feeDisplay = feeVal.toFixed(2) + ' USDT (约 ¥' + (feeVal * this.settings.rate).toFixed(2) + ')';
+    }
+    
+    return {
+        fee: feeDisplay,
+        final: finalVal
+    };
+}
+        },
+        created() {
+            this.initData(); // 提前加载数据
+        },
+        mounted() {
+            localStorage.setItem('chat_session_id', this.chatSessionId);
+            this.genCaptcha();
+            this.startOrderTimers();
+            this.initSocket();
+            this.pollChat();
+            setInterval(() => {
+                if (!document.hidden) this.pollUpdates();
+            }, 8000);
+        },
+        beforeUnmount() {
+            if(this.chatPollTimer) clearInterval(this.chatPollTimer);
+            Object.values(this.orderTimers).forEach(timer => clearInterval(timer));
+        },
+        methods: {
+ initSocket() {
+                if (this.socket) {
+                    this.socket.disconnect();
+                }
+                this.socket = io(API_BASE);
+                const sid = this.user.id ? `user_${this.user.id}` : this.chatSessionId;
+                
+                this.socket.on('connect', () => {
+                    this.socket.emit('join_room', sid);
+                });
+
+                this.socket.on('new_message', (msg) => {
+                    if (msg.session_id === sid) {
+                        this.chatMessages.push(msg);
+                        this.$nextTick(() => {
+                            const box = document.getElementById('chat-msgs');
+                            if(box) box.scrollTop = box.scrollHeight;
+                            
+                            if (msg.sender === 'admin') {
+                                this.messageSound.play().catch(()=>{});
+                                if (!this.chatOpen) {
+                                    this.unreadMessages++;
+                                    this.showChatNotification(msg.msg_type === 'image' ? '[图片]' : msg.content);
+                                }
+                            }
+                        });
+                    }
+                });
+            },
+
+            async sendChatImage(event) {
+                const file = event.target.files[0];
+                if (!file) return;
+                
+                if (file.size > 2 * 1024 * 1024) {
+                    Swal.fire('文件过大', '请上传小于 2MB 的图片', 'warning');
+                    return;
+                }
+
+                const tempId = Date.now();
+                this.chatMessages.push({
+                    sender: 'user',
+                    content: '图片上传中...',
+                    msg_type: 'text',
+                    id: tempId
+                });
+                this.$nextTick(() => {
+                    const box = document.getElementById('chat-msgs');
+                    if(box) box.scrollTop = box.scrollHeight;
+                });
+
+                try {
+                    const formData = new FormData();
+                    formData.append('file', file);
+                    const uploadRes = await axios.post(`${API_BASE}/api/chat/upload`, formData, {
+                        headers: { 'Content-Type': 'multipart/form-data' }
+                    });
+                    
+                    if (uploadRes.data.success) {
+                        const imgUrl = uploadRes.data.url;
+                        const sid = this.user.id ? `user_${this.user.id}` : this.chatSessionId;
+                        
+                        await axios.post(`${API_BASE}/api/chat/send`, {
+                            sessionId: sid,
+                            text: imgUrl,
+                            msgType: 'image'
+                        });
+                        
+                        this.chatMessages = this.chatMessages.filter(m => m.id !== tempId);
+                    }
+                } catch (e) {
+                    Swal.fire('发送失败', '图片上传失败', 'error');
+                    this.chatMessages = this.chatMessages.filter(m => m.id !== tempId);
+                }
+                event.target.value = '';
+            },
+            async initData() {
+                this.loading = true;
+                try {
+                    const res = await axios.get(`${API_BASE}/api/public/data`);
+                    const d = res.data;
+                    this.products = d.products || [];
+                    this.categories = d.categories || [];
+                    this.hiringList = d.hiring || [];
+                    this.settings = {
+                        rate: d.rate,
+                        feeRate: d.feeRate,
+                        announcement: d.announcement,
+                        showPopup: d.showPopup,
+                        wallet: d.wallet
+                    };
+
+                    if (this.settings.showPopup && this.settings.announcement && !sessionStorage.getItem('pop_shown')) {
+                        Swal.fire({
+                            title: '平台公告',
+                            text: this.settings.announcement,
+                            icon: 'info',
+                            confirmButtonColor: '#3b82f6',
+                            confirmButtonText: '我知道了'
+                        });
+                        sessionStorage.setItem('pop_shown', '1');
+                    }
+
+                    if (this.user.id) {
+                        this.loadOrders();
+                        this.loadUserBalance();
+                    }
+
+                } catch (e) {
+                    console.error(e);
+                } finally {
+                    this.loading = false;
+                }
+            },
+
+            async loadUserBalance() {
+                try {
+                    const res = await axios.get(`${API_BASE}/api/user/balance?userId=${this.user.id}`);
+                    if (res.data.success) {
+                        this.user.balance = res.data.balance;
+                        localStorage.setItem('nexus_user', JSON.stringify(this.user));
+                    }
+                } catch (e) {
+                    console.error("加载余额失败", e);
+                }
+            },
+
+            async loadOrders() {
+                try {
+                    const res = await axios.get(`${API_BASE}/api/order?userId=${this.user.id}`);
+                    this.myOrders = res.data || [];
+                    this.startOrderTimers();
+                } catch (e) {
+                    console.error("加载订单失败", e);
+                }
+            },
+
+            setView(v) {
+                if (v === 'products') {
+                    this.view = 'home';
+                    this.filterCat = 'all'; 
+                } else {
+                    this.view = v;
+                    if(v === 'home') this.filterCat = 'all';
+                }
+                this.mobileMenuOpen = false;
+            },
+            
+        checkLoginAndGo(target) {
+                if (!this.user.id) {
+                    this.openAuth('login');
+                    return;
+                }
+                if (target === 'orders_page') {
+                    this.view = 'orders_page';
+                    this.loadOrders();
+                } else if (target === 'profile') {
+                    this.view = 'profile';
+                }
+                this.mobileMenuOpen = false;
+            },
+
+            // 详情与图片逻辑
+            openProductDetail(prod) {
+                this.productDetailModal.prod = prod;
+                this.currentImgIndex = 0;
+                this.productDetailModal.open = true;
+            },
+            
+            getImgList(prod) {
+                if(!prod) return [];
+                try {
+                    const imgs = JSON.parse(prod.image_url);
+                    if (Array.isArray(imgs)) {
+                        return imgs.map(url => {
+                            if (!url) return '';
+                            if (url.startsWith('data:')) return url; 
+                            return url.startsWith('http') ? url : `${API_BASE}${url}`;
+                        }).filter(url => url);
+                    }
+                    return [];
+                } catch (e) {
+                    // 如果不是JSON，尝试作为字符串处理
+                    if (prod.image_url) {
+                        const url = prod.image_url;
+                        if (url.startsWith('data:')) return [url];
+                        return [url.startsWith('http') ? url : `${API_BASE}${url}`];
+                    }
+                    return [];
+                }
+            },
+            
+            handleImageError(event) {
+                event.target.src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 24 24"><rect width="24" height="24" fill="%23e2e8f0"/><text x="12" y="12" text-anchor="middle" dy=".3em" fill="%2394a3b8" font-size="10">图片</text></svg>';
+            },
+            
+            nextImage() {
+                const len = this.currentProdImgs.length;
+                if(len > 1) {
+                    this.currentImgIndex = (this.currentImgIndex + 1) % len;
+                }
+            },
+            prevImage() {
+                const len = this.currentProdImgs.length;
+                if(len > 1) {
+                    this.currentImgIndex = (this.currentImgIndex - 1 + len) % len;
+                }
+            },
+
+            // 客服逻辑
+            toggleChat() {
+                this.chatOpen = !this.chatOpen;
+                if(this.chatOpen) {
+                    this.pollChat(); // 立即拉取一次
+                    this.unreadMessages = 0; // 清空未读小红点
+                    
+                    // 滚动到底部
+                    this.$nextTick(() => {
+                        const box = document.getElementById('chat-msgs');
+                        if(box) box.scrollTop = box.scrollHeight;
+                    });
+                }
+            },
+            
+            // [新代码] 优化轮询逻辑：窗口关闭也能收到通知
+           async pollChat() {
+                if (!this.user.id && !this.chatSessionId) return;
+
+                try {
+                    const sid = this.user.id ? `user_${this.user.id}` : this.chatSessionId;
+                    const res = await axios.get(`${API_BASE}/api/chat/history/${sid}`);
+                    const newMessages = res.data || [];
+                    const oldLength = this.chatMessages.length;
+                    
+                    if (this.chatOpen) {
+                        this.chatMessages = newMessages;
+                        if (newMessages.length > oldLength) {
+                            this.$nextTick(() => {
+                                const box = document.getElementById('chat-msgs');
+                                if(box) box.scrollTop = box.scrollHeight;
+                                this.messageSound.play().catch(()=>{});
+                            });
+                        }
+                    } 
+                    else {
+                        const adminMsgs = newMessages.filter(m => m.sender === 'admin');
+                        const lastAdminMsg = adminMsgs.length > 0 ? adminMsgs[adminMsgs.length - 1] : null;
+                        
+                        if (newMessages.length > oldLength) {
+                            // 只有初始化完成后，且确实有新消息才弹窗
+                            if (this.chatInitialized && lastAdminMsg) {
+                                this.unreadMessages = newMessages.filter(m => m.sender === 'admin' && !m.is_read).length;
+                                this.messageSound.play().catch(()=>{});
+                                this.showChatNotification(lastAdminMsg.content);
+                            }
+                        }
+                        this.chatMessages = newMessages;
+                        this.chatInitialized = true; // 标记初始化完成
+                    }
+                } catch(e){}
+            },
+
+            // [新代码] 新增：显示丝滑的右上角通知
+            showChatNotification(text) {
+                // 使用 SweetAlert2 的 Toast 模式
+                const Toast = Swal.mixin({
+                    toast: true,
+                    position: 'top-end', // 右上角弹出
+                    showConfirmButton: false,
+                    timer: 5000,
+                    timerProgressBar: true,
+                    didOpen: (toast) => {
+                        toast.addEventListener('mouseenter', Swal.stopTimer)
+                        toast.addEventListener('mouseleave', Swal.resumeTimer)
+                        toast.addEventListener('click', () => {
+                            // 点击通知，自动打开聊天框
+                            this.chatOpen = true; 
+                            this.unreadMessages = 0;
+                            this.$nextTick(() => {
+                                const box = document.getElementById('chat-msgs');
+                                if(box) box.scrollTop = box.scrollHeight;
+                            });
+                            Swal.close();
+                        })
+                    }
+                });
+
+                Toast.fire({
+                    icon: 'info',
+                    title: '客服发来新消息',
+                    text: text,
+                    background: '#ffffff',
+                    color: '#334155',
+                    iconColor: '#3b82f6'
+                });
+            },
+            
+           async sendMessage() {
+                const txt = this.chatInput.trim();
+                if(!txt) return;
+                
+                const sid = this.user.id ? `user_${this.user.id}` : this.chatSessionId;
+                
+                try {
+                    await axios.post(`${API_BASE}/api/chat/send`, { 
+                        sessionId: sid, 
+                        text: txt,
+                        msgType: 'text'
+                    });
+                    this.chatInput = '';
+                } catch(e){}
+            },
+
+            // 认证逻辑
+            openAuth(mode) {
+                this.authModal.mode = mode;
+                this.authModal.open = true;
+                this.authForm = { contact: '', password: '', confirmPassword: '', captchaInput: '', inviteCode: '' };
+                this.mobileMenuOpen = false;
+                this.genCaptcha();
+            },
+            
+            toggleAuthMode() {
+                this.authModal.mode = this.authModal.mode === 'login' ? 'register' : 'login';
+                this.genCaptcha();
+            },
+            
+            genCaptcha() {
+                const num = Math.floor(1000 + Math.random() * 9000).toString();
+                this.captcha.value = num;
+                this.captcha.display = num.split('').join(' ');
+                this.authForm.captchaInput = '';
+            },
+            
+async handleAuth() {
+                if (this.authForm.captchaInput !== this.captcha.value) {
+                    Swal.fire('验证失败', '验证码错误，请重新输入', 'error');
+                    this.genCaptcha();
+                    return;
+                }
+
+                if (this.authModal.mode === 'register') {
+                    if (this.authForm.password.length < 6) {
+                         Swal.fire('验证提示', '密码长度至少为6位', 'warning');
+                         return;
+                    }
+                    if (this.authForm.password !== this.authForm.confirmPassword) {
+                        Swal.fire('验证提示', '两次输入的密码不一致', 'warning');
+                        return;
+                    }
+                }
+
+                // 自动将邀请码转为大写
+                if (this.authForm.inviteCode) {
+                    this.authForm.inviteCode = this.authForm.inviteCode.toUpperCase();
+                }
+
+                this.authSubmitting = true;
+                try {
+                    const uid = Math.floor(1000 + Math.random() * 9000);
+                    
+                    const endpoint = this.authModal.mode === 'login' ? '/api/user/login' : '/api/user/register';
+                    const res = await axios.post(`${API_BASE}${endpoint}`, {
+                        contact: this.authForm.contact,
+                        password: this.authForm.password,
+                        uid: this.authModal.mode === 'register' ? uid : undefined,
+                        inviteCode: this.authForm.inviteCode // <--- 新增这行，把邀请码发给后端
+                    });
+
+                    if (res.data.success) {
+                        this.user = { 
+                            id: res.data.userId, 
+                            contact: this.authForm.contact,
+                            uid: res.data.uid || uid,
+                            balance: res.data.balance || 0,
+                            inviteCode: res.data.inviteCode // 确保保存邀请码
+                        };
+                        localStorage.setItem('nexus_user', JSON.stringify(this.user));
+                        this.authModal.open = false;
+                        
+                        Swal.fire({
+                            icon: 'success',
+                            title: res.data.isNew ? '注册成功' : '欢迎回来',
+                            text: '已成功登录账号',
+                            timer: 1500,
+                            showConfirmButton: false
+                        });
+                        this.loadOrders();
+                        this.loadUserBalance();
+                        this.initSocket();
+                        this.pollChat();
+                    } else {
+                        Swal.fire(this.authModal.mode === 'login'?'登录失败':'注册失败', res.data.msg, 'error');
+                    }
+                } catch (e) {
+                    Swal.fire('系统错误', '请求失败，请检查网络', 'error');
+                } finally {
+                    this.authSubmitting = false;
+                }
+            },
+            
+           logout() {
+                localStorage.removeItem('nexus_user');
+                this.user = {};
+                this.view = 'home';
+                this.myOrders = [];
+                this.cartItems = [];
+                localStorage.removeItem('nexus_cart');
+                this.initSocket();
+                this.chatMessages = [];
+                this.unreadMessages = 0;
+                Swal.fire({
+                    icon: 'success',
+                    title: '已退出',
+                    timer: 1000,
+                    showConfirmButton: false
+                });
+            },
+
+            // 购买逻辑
+            openBuyModal(prod) {
+                this.productDetailModal.open = false; 
+                if (!this.user.id) return this.openAuth('login');
+                this.buyModal.prod = prod;
+                this.buyModal.open = true;
+                this.buyForm = { 
+                    method: 'USDT', 
+                    shipName: '', 
+                    shipTel: '', 
+                    shipAddr: '',
+                    useBalance: false,
+                    balanceAmount: 0
+                };
+            },
+            
+            calculateCNY(usdtPrice) {
+                let base = usdtPrice * this.settings.rate;
+                if (this.settings.feeRate > 0) {
+                    base += base * (this.settings.feeRate / 100);
+                }
+                return base.toFixed(2);
+            },
+            
+            calculateFinalAmount(usdtPrice) {
+                let finalAmount = parseFloat(usdtPrice);
+                
+                if (this.buyForm.useBalance && this.buyForm.balanceAmount > 0) {
+                    finalAmount = Math.max(0, finalAmount - this.buyForm.balanceAmount);
+                }
+                
+                if (this.buyForm.method === 'USDT') {
+                    return finalAmount.toFixed(2) + ' USDT';
+                } else {
+                    let cnyAmount = finalAmount * this.settings.rate;
+                    if (this.settings.feeRate > 0) {
+                        cnyAmount += cnyAmount * (this.settings.feeRate / 100);
+                    }
+                    return '¥' + cnyAmount.toFixed(2);
+                }
+            },
+
+            isOrderExpired(order) {
+                if (!order.expires_at) return false;
+                return new Date() > new Date(order.expires_at);
+            },
+            
+async submitOrder() {
+                if (!this.buyForm.contactInfo) {
+                    return Swal.fire('提示', '请填写接收通知的 邮箱 或 Telegram', 'warning');
+                }
+
+                if (this.buyModal.prod.type === 'physical') {
+                    if (!this.buyForm.shipName || !this.buyForm.shipTel || !this.buyForm.shipAddr) {
+                        return Swal.fire('提示', '请填写完整的收货信息', 'warning');
+                    }
+                }
+
+                this.orderSubmitting = true;
+                
+                try {
+                    const res = await axios.post(`${API_BASE}/api/order`, {
+                        userId: this.user.id,
+                        productId: this.buyModal.prod.id,
+                        paymentMethod: this.buyForm.method,
+                        useBalance: this.buyForm.useBalance,
+                        balanceAmount: this.buyForm.balanceAmount,
+                        contactInfo: this.buyForm.contactInfo,
+                        totalAmount: this.buyModal.prod.price,
+                        shippingInfo: this.buyModal.prod.type === 'physical' ? {
+                            name: this.buyForm.shipName,
+                            tel: this.buyForm.shipTel,
+                            addr: this.buyForm.shipAddr
+                        } : {}
+                    });
+
+                    // 3. 处理响应
+                    if (res.data.success) {
+                        this.buyModal.open = false;
+                        
+                        if (res.data.status === '已支付') {
+                            Swal.fire({
+                                icon: 'success',
+                                title: '支付成功',
+                                text: '余额抵扣成功，我们将尽快为您发货',
+                                confirmButtonText: '确定',
+                                confirmButtonColor: '#10b981'
+                            });
+                            this.checkLoginAndGo('orders_page');
+                            this.loadUserBalance();
+                            return;
+                        }
+
+                        let msg = `订单创建成功！<br>订单号: <b>${res.data.orderId}</b><br>`;
+                        let timerInterval; // 定义计时器变量
+
+                        // 构建弹窗内容
+                        if (this.buyForm.method === 'USDT') {
+                            const randomCents = res.data.orderId.toString().slice(-2);
+                            const randomDecimal = parseInt(randomCents) / 100;
+                            const finalAmount = (parseFloat(res.data.usdtAmount) + randomDecimal).toFixed(2);
+                            
+                            msg += `
+                                请在 <b id="success-timer" class="text-red-500 font-mono text-lg">30:00</b> 内完成支付<br>
+                                支付金额: <b style="color:#ef4444; font-size:1.2em;">${finalAmount} USDT</b><br>
+                                <span style="font-size:10px; color:#666;">(已自动包含随机小数以便核对)</span><br>
+                                支付地址 (TRC20): <br>
+                                <div style="background:#f1f5f9; padding:10px; border:1px dashed #3b82f6; border-radius:4px; margin:5px 0; font-size:13px; font-weight:bold; cursor:pointer; word-break:break-all;" onclick="navigator.clipboard.writeText('${res.data.wallet}')">
+                                    ${res.data.wallet}
+                                    <div style="font-size:10px; color:#3b82f6; margin-top:4px;">📋 点击复制地址</div>
+                                </div>
+                                <div style="background:#fffbeb; border:1px solid #fcd34d; padding:8px; border-radius:4px; margin-top:5px; font-size:12px; color:#b45309; text-align:left;">
+                                    ⚠️ <b>重要提示：</b><br>
+                                    1. 必须支付 <b>${finalAmount}</b> 才能自动到账。<br>
+                                    2. 30分钟内未支付订单将自动过期。<br>
+                                    3. 多出来的小数点是系统随机生成的用于区分订单是否支付成功，支付后会到你的账户余额，下次可以组合支付也可以提现。
+                                </div>
+                            `;
+                        } else {
+                            msg += `请支付 <b>¥${res.data.cnyAmount}</b><br>请联系客服获取收款码，并发送订单号 ${res.data.orderId}。`;
+                        }
+
+                        // 弹出成功窗口
+                        await Swal.fire({
+                            title: '下单成功',
+                            html: msg,
+                            icon: 'success',
+                            confirmButtonText: '查看订单',
+                            confirmButtonColor: '#3b82f6',
+                            didOpen: () => {
+                                const timerDisplay = document.getElementById('success-timer');
+                                if (timerDisplay) {
+                                    let timeLeft = 30 * 60; 
+                                    timerInterval = setInterval(() => {
+                                        timeLeft--;
+                                        if (timeLeft < 0) {
+                                            clearInterval(timerInterval);
+                                            timerDisplay.textContent = "已过期";
+                                        } else {
+                                            const m = Math.floor(timeLeft / 60);
+                                            const s = timeLeft % 60;
+                                            timerDisplay.textContent = `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+                                        }
+                                    }, 1000);
+                                }
+                            },
+                            willClose: () => {
+                                if (timerInterval) clearInterval(timerInterval);
+                            }
+                        });
+                        
+                        this.checkLoginAndGo('orders');
+                        this.loadUserBalance();
+
+                    } else {
+                        Swal.fire('下单失败', res.data.msg, 'error');
+                    }
+                } catch (e) {
+                    console.error(e);
+                    Swal.fire('错误', '网络异常', 'error');
+                } finally {
+                    this.orderSubmitting = false;
+                }
+            },
+            
+            async cancelOrder(oid) {
+                const result = await Swal.fire({
+                    title: '确定取消订单?',
+                    text: "取消后无法恢复",
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#ef4444',
+                    cancelButtonColor: '#94a3b8',
+                    confirmButtonText: '确定取消',
+                    cancelButtonText: '返回'
+                });
+
+                if (result.isConfirmed) {
+                    try {
+                        const res = await axios.post(`${API_BASE}/api/order/cancel`, {
+                            orderId: oid,
+                            userId: this.user.id
+                        });
+                        if (res.data.success) {
+                            Swal.fire({title:'已取消', icon:'success', timer:1000, showConfirmButton:false});
+                            this.loadOrders();
+                            this.loadUserBalance();
+                        } else {
+                            Swal.fire('失败', res.data.msg, 'error');
+                        }
+                    } catch (e) {
+                        Swal.fire('错误', '操作失败', 'error');
+                    }
+                }
+            },
+            
+            continueRecharge(item) {
+                this.recordModal.open = false; // 先关闭记录弹窗，防止遮挡
+                this.showPaymentInfo(item);    // 调用已有的支付详情弹窗
+            },
+
+            showPaymentInfo(order) {
+                // 先判断是否过期
+                if (this.isOrderExpired(order)) {
+                   const randomCents = order.order_id.toString().slice(-2);
+                    const displayAmount = (parseFloat(order.usdt_amount) + (parseInt(randomCents)/100)).toFixed(2);
+                    let timerInterval;
+                    Swal.fire({
+                        title: 'USDT 支付详情',
+                        html: `
+                            <div class="text-left">
+                                <p class="mb-2">待支付金额: <b class="text-red-600 text-xl">${displayAmount} USDT</b></p>
+                                <p class="text-sm text-slate-500 mb-1">请在 <b id="detail-timer" class="text-red-500 font-mono text-lg">--:--</b> 内完成支付</p>
+                                <p class="text-sm text-slate-800 font-bold mb-1">TRC20 收款地址:</p>
+                                <div class="bg-slate-50 p-3 rounded text-sm break-all select-all border-2 border-dashed border-blue-200 mb-4 text-slate-800 font-bold cursor-pointer hover:bg-blue-50 transition" onclick="navigator.clipboard.writeText('${order.wallet}')">
+                                    ${order.wallet}
+                                    <div class="text-xs text-blue-500 mt-2 flex items-center justify-center gap-1"><i class="ri-file-copy-line"></i> 点击复制地址</div>
+                                </div>
+                                <div class="text-xs text-slate-600 bg-orange-50 p-3 rounded border border-orange-100 leading-relaxed">
+                                    <strong>⚠️ 支付必读：</strong><br>
+                                    请一定要付准确的金额 <b>${displayAmount}</b> USDT。<br>
+                                    多出来的小数点是系统随机生成的用于区分订单是否支付成功，支付后会到你的账户余额，下次可以组合支付也可以提现。
+                                </div>
+                            </div>
+                        `,
+                        confirmButtonText: '我已了解',
+                        confirmButtonColor: '#3b82f6',
+                        didOpen: () => {
+                            const timerDisplay = document.getElementById('detail-timer');
+                            const expires = new Date(order.expires_at).getTime();
+                            timerInterval = setInterval(() => {
+                                const now = new Date().getTime();
+                                const distance = expires - now;
+                                if (distance < 0) {
+                                    clearInterval(timerInterval);
+                                    if(timerDisplay) timerDisplay.textContent = "已过期";
+                                } else {
+                                    const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+                                    const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+                                    if(timerDisplay) timerDisplay.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+                                }
+                            }, 1000);
+                        },
+                        willClose: () => {
+                            clearInterval(timerInterval);
+                        }
+                    });
+                } else {
+                    // 如果已经有二维码，显示二维码弹窗
+                    if (order.qrcode_url) {
+                        let payMethodText = '请使用扫码支付';
+                        if (order.payment_method === 'WeChat') payMethodText = '请使用微信扫码支付';
+                        else if (order.payment_method === 'Alipay') payMethodText = '请使用支付宝扫码支付';
+
+                        let timerInterval;
+                        Swal.fire({
+                            title: '请扫码支付',
+                            html: `
+                                <div class="text-center">
+                                    <p class="mb-2">订单号: <b>${order.order_id}</b></p>
+                                    <p class="text-red-500 font-bold mb-4">请在 <b id="manual-qr-timer">--:--</b> 内完成支付</p>
+                                    <img src="${order.qrcode_url}" style="max-width:200px; margin:0 auto; border:1px solid #eee; border-radius:8px; padding:5px;">
+                                    <p class="mt-3 text-sm text-slate-500">${payMethodText}</p>
+                                    <p class="mt-1 text-lg font-bold text-brand-600">¥${order.cny_amount}</p>
+                                </div>
+                            `,
+                            icon: 'info',
+                            confirmButtonText: '我已支付，上传凭证',
+                            showDenyButton: true,
+                            denyButtonText: '二维码无法识别',
+                            denyButtonColor: '#f97316',
+                            showCancelButton: true,
+                            cancelButtonText: '稍后支付',
+                            confirmButtonColor: '#3b82f6',
+                            didOpen: () => {
+                                const timerDisplay = document.getElementById('manual-qr-timer');
+                                const expires = new Date(order.expires_at).getTime(); 
+                                timerInterval = setInterval(() => {
+                                    const now = new Date().getTime();
+                                    const distance = expires - now;
+                                    if (distance < 0) {
+                                        clearInterval(timerInterval);
+                                        if(timerDisplay) timerDisplay.textContent = "已过期";
+                                        Swal.close();
+                                    } else {
+                                        const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+                                        const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+                                        if(timerDisplay) timerDisplay.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+                                    }
+                                }, 1000);
+                            },
+                            willClose: () => {
+                                clearInterval(timerInterval);
+                            }
+                        }).then((result) => {
+                            if (result.isConfirmed) {
+                                this.confirmPayment(order.order_id);
+                            } else if (result.isDenied) {
+                                this.reportQrIssue(order.order_id);
+                            }
+                        });
+                    } else {
+                        // 没有二维码时显示原来的提示
+                        Swal.fire({
+                            title: '等待收款码',
+                            text: `需支付 ¥${order.cny_amount}。请联系客服获取收款码，并发送订单号 ${order.order_id}。`,
+                            icon: 'info',
+                            confirmButtonColor: '#3b82f6'
+                        });
+                    }
+                }
+            },
+            
+            // 充值功能
+            openRechargeModal() {
+                if (!this.user.id) return this.openAuth('login');
+                this.rechargeModal.open = true;
+                this.rechargeForm = { amount: 10, method: 'USDT' };
+            },
+            
+            async submitRecharge() {
+                if (!this.rechargeForm.amount || this.rechargeForm.amount <= 0) {
+                    return Swal.fire('提示', '请输入正确的充值金额', 'warning');
+                }
+
+                this.rechargeSubmitting = true;
+                try {
+                    const res = await axios.post(`${API_BASE}/api/recharge`, {
+                        userId: this.user.id,
+                        amount: this.rechargeForm.amount,
+                        method: this.rechargeForm.method
+                    });
+
+                    if (res.data.success) {
+                        this.rechargeModal.open = false;
+                        
+                        let msg = `充值订单创建成功！<br>订单号: <b>${res.data.orderId}</b><br>`;
+                        if (this.rechargeForm.method === 'USDT') {
+                            msg += `
+                                请在 <b class="order-timer">30:00</b> 内完成支付<br>
+                                支付金额: <b style="color:#2563eb">${res.data.usdtAmount} USDT</b><br>
+                                支付地址: <br>
+                                <div style="background:#f1f5f9; padding:8px; border-radius:4px; margin:5px 0; font-family:monospace; font-size:12px; cursor:pointer;" onclick="navigator.clipboard.writeText('${res.data.wallet}')">
+                                    ${res.data.wallet}
+                                    <div style="font-size:10px; color:#64748b;">点击复制地址</div>
+                                </div>
+                            `;
+                        } else {
+                            msg += `请支付 <b>¥${res.data.cnyAmount}</b><br>请联系客服获取收款码，并发送订单号 ${res.data.orderId}。`;
+                        }
+
+                        Swal.fire({
+                            title: '充值成功',
+                            html: msg,
+                            icon: 'success',
+                            confirmButtonText: '确定',
+                            confirmButtonColor: '#3b82f6'
+                        });
+                        
+                        this.loadUserBalance();
+                    } else {
+                        Swal.fire('充值失败', res.data.msg, 'error');
+                    }
+                } catch (e) {
+                    Swal.fire('错误', '网络异常', 'error');
+                } finally {
+                    this.rechargeSubmitting = false;
+                }
+            },
+            
+            // 提现功能
+            openWithdrawModal() {
+                if (!this.user.id) return this.openAuth('login');
+                if ((this.user.balance || 0) < 1) {
+                    return Swal.fire('提示', '余额不足1 USDT，无法提现', 'warning');
+                }
+                this.withdrawModal.open = true;
+                this.withdrawForm = { amount: Math.min(this.user.balance || 0, 10), address: '' };
+            },
+            
+            handleWithdrawFile(event) {
+                const file = event.target.files[0];
+                if(file) {
+                    this.withdrawForm.file = file;
+                    this.withdrawForm.preview = URL.createObjectURL(file);
+                }
+            },
+
+            async submitWithdraw() {
+                if (!this.withdrawForm.amount || this.withdrawForm.amount < 5) {
+                    return Swal.fire('提示', '最小提现金额为 5 USDT', 'warning');
+                }
+                if (this.withdrawForm.amount > (this.user.balance || 0)) {
+                    return Swal.fire('提示', '提现金额不能超过余额', 'warning');
+                }
+                
+                if (this.withdrawForm.method === 'USDT') {
+                    if(!this.withdrawForm.address || this.withdrawForm.address.length < 10) return Swal.fire('提示', '请输入正确的USDT地址', 'warning');
+                    if(!this.withdrawForm.confirmAddr) return Swal.fire('提示', '请勾选确认地址正确', 'warning');
+                } else {
+                    if(!this.withdrawForm.file) return Swal.fire('提示', '请上传收款码图片', 'warning');
+                }
+
+                this.withdrawSubmitting = true;
+                try {
+                    const formData = new FormData();
+                    formData.append('userId', this.user.id);
+                    formData.append('amount', this.withdrawForm.amount);
+                    formData.append('method', this.withdrawForm.method);
+                    formData.append('address', this.withdrawForm.address || '');
+                    if(this.withdrawForm.file) {
+                        formData.append('file', this.withdrawForm.file);
+                    }
+
+                    const res = await axios.post(`${API_BASE}/api/withdraw`, formData, {
+                        headers: { 'Content-Type': 'multipart/form-data' }
+                    });
+
+                    if (res.data.success) {
+                        this.withdrawModal.open = false;
+                        Swal.fire({
+                            title: '提现申请已提交',
+                            text: '客服稍后会处理请稍等',
+                            icon: 'success',
+                            confirmButtonColor: '#3b82f6'
+                        });
+                        this.loadUserBalance();
+                    } else {
+                        Swal.fire('提现失败', res.data.msg, 'error');
+                    }
+                } catch (e) {
+                    Swal.fire('错误', '网络异常', 'error');
+                } finally {
+                    this.withdrawSubmitting = false;
+                }
+            },
+            
+            // 支付凭证
+            confirmPayment(orderId) {
+                this.paymentProofModal.open = true;
+                this.paymentProofModal.orderId = orderId;
+                this.paymentProofModal.proofUrl = '';
+            },
+            
+           handlePaymentProof(event) {
+                const file = event.target.files[0];
+                if (file) {
+                    this.paymentProofModal.file = file; 
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        this.paymentProofModal.proofUrl = e.target.result;
+                    };
+                    reader.readAsDataURL(file);
+                }
+            },
+            
+            async submitPaymentProof() {
+                if (!this.paymentProofModal.file) {
+                    return Swal.fire('提示', '请上传支付凭证', 'warning');
+                }
+
+                this.paymentProofSubmitting = true;
+                try {
+                    const formData = new FormData();
+                    formData.append('orderId', this.paymentProofModal.orderId);
+                    formData.append('userId', this.user.id);
+                    formData.append('file', this.paymentProofModal.file);
+
+                    const res = await axios.post(`${API_BASE}/api/order/confirm-payment`, formData, {
+                        headers: { 'Content-Type': 'multipart/form-data' }
+                    });
+
+                    if (res.data.success) {
+                        this.paymentProofModal.open = false;
+                        this.paymentProofModal.file = null;
+                        this.paymentProofModal.proofUrl = '';
+                        
+                        Swal.fire({
+                            title: '提交成功',
+                            text: '客服稍后会核实你的支付凭证',
+                            icon: 'success',
+                            timer: 2000,
+                            showConfirmButton: false
+                        });
+                        this.loadOrders();
+                    } else {
+                        Swal.fire('提交失败', res.data.msg, 'error');
+                    }
+                } catch (e) {
+                    console.error(e);
+                    Swal.fire('错误', '网络异常', 'error');
+                } finally {
+                    this.paymentProofSubmitting = false;
+                }
+            },
+            
+            reportQrIssue(orderId) {
+                Swal.fire({
+                    title: '二维码异常',
+                    text: '已通知客服，请稍后刷新页面查看新的二维码',
+                    icon: 'warning',
+                    confirmButtonColor: '#3b82f6'
+                });
+                
+                // 发送通知到后台
+                axios.post(`${API_BASE}/api/order/report-qr-issue`, {
+                    orderId: orderId,
+                    userId: this.user.id
+                }).catch(() => {});
+            },
+            
+            // 密码修改
+            async changePassword() {
+                if (!this.securityForm.oldPassword) {
+                    return Swal.fire('提示', '请输入旧密码', 'warning');
+                }
+                if (!this.securityForm.newPassword) {
+                    return Swal.fire('提示', '请输入新密码', 'warning');
+                }
+                if (this.securityForm.newPassword.length < 6) {
+                    return Swal.fire('提示', '新密码长度至少6位', 'warning');
+                }
+                if (this.securityForm.newPassword !== this.securityForm.confirmPassword) {
+                    return Swal.fire('提示', '两次输入的新密码不一致', 'warning');
+                }
+
+                try {
+                    const res = await axios.post(`${API_BASE}/api/user/change-password`, {
+                        userId: this.user.id,
+                        oldPassword: this.securityForm.oldPassword,
+                        newPassword: this.securityForm.newPassword
+                    });
+
+                    if (res.data.success) {
+                        Swal.fire({
+                            title: '修改成功',
+                            text: '密码修改成功，请重新登录',
+                            icon: 'success',
+                            confirmButtonColor: '#3b82f6'
+                        }).then(() => {
+                            this.logout();
+                        });
+                    } else {
+                        Swal.fire('修改失败', res.data.msg, 'error');
+                    }
+                } catch (e) {
+                    Swal.fire('错误', '网络异常', 'error');
+                }
+            },
+            
+            // 购物车功能
+            addToCart(prod) {
+                const existingItem = this.cartItems.find(item => item.id === prod.id);
+                if (existingItem) {
+                    existingItem.quantity = (existingItem.quantity || 1) + 1;
+                } else {
+                    this.cartItems.push({
+                        ...prod,
+                        quantity: 1
+                    });
+                }
+                localStorage.setItem('nexus_cart', JSON.stringify(this.cartItems));
+                
+                Swal.fire({
+                    icon: 'success',
+                    title: '已加入购物车',
+                    timer: 1000,
+                    showConfirmButton: false
+                });
+            },
+            
+            removeFromCart(item) {
+                this.cartItems = this.cartItems.filter(cartItem => cartItem.id !== item.id);
+                localStorage.setItem('nexus_cart', JSON.stringify(this.cartItems));
+            },
+            
+            updateCartQuantity(item, delta) {
+                const newQuantity = (item.quantity || 1) + delta;
+                if (newQuantity < 1) {
+                    this.removeFromCart(item);
+                } else {
+                    item.quantity = newQuantity;
+                    localStorage.setItem('nexus_cart', JSON.stringify(this.cartItems));
+                }
+            },
+            
+            clearCart() {
+                Swal.fire({
+                    title: '清空购物车？',
+                    text: "这将删除购物车中的所有商品",
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#ef4444',
+                    cancelButtonColor: '#94a3b8',
+                    confirmButtonText: '清空',
+                    cancelButtonText: '取消'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        this.cartItems = [];
+                        localStorage.setItem('nexus_cart', JSON.stringify(this.cartItems));
+                    }
+                });
+            },
+            
+            viewCart() {
+                if (!this.user.id) return this.openAuth('login');
+                this.view = 'cart';
+            },
+            
+            checkoutCart() {
+                if (this.cartItems.length === 0) return;
+                
+                const hasPhysical = this.cartItems.some(item => item.type === 'physical');
+                const totalAmount = this.cartTotal;
+                
+                const itemNames = this.cartItems.map(item => `${item.name} x${item.quantity||1}`).join(' | ');
+
+                this.buyModal.prod = {
+                    id: 'cart',
+                    name: itemNames,
+                    price: totalAmount,
+                    type: hasPhysical ? 'physical' : 'virtual',
+                    description: itemNames
+                };
+                this.buyModal.open = true;
+                this.buyForm = { 
+                    method: 'USDT', 
+                    shipName: '', 
+                    shipTel: '', 
+                    shipAddr: '',
+                    useBalance: false,
+                    balanceAmount: 0,
+                    contactInfo: ''
+                };
+            },
+            
+            // 订单倒计时
+            startOrderTimers() {
+                // 清除现有计时器
+                Object.values(this.orderTimers).forEach(timer => clearInterval(timer));
+                this.orderTimers = {};
+                
+                // 为每个待支付订单启动计时器
+                this.myOrders
+                    .filter(order => order.status === '待支付' && order.expires_at)
+                    .forEach(order => {
+                        this.orderTimers[order.order_id] = setInterval(() => {
+                            this.updateOrderTimer(order.order_id);
+                        }, 1000);
+                    });
+            },
+            
+           updateOrderTimer(orderId) {
+                const order = this.myOrders.find(o => o.order_id === orderId);
+                if (!order) {
+                    clearInterval(this.orderTimers[orderId]);
+                    return;
+                }
+                
+                if (order.status !== '待支付') {
+                    clearInterval(this.orderTimers[orderId]);
+                    return;
+                }
+                
+                const now = new Date().getTime();
+                const expires = new Date(order.expires_at).getTime();
+                let diff = expires - now;
+
+                if (!order.expires_at) {
+                    order.countdown_text = "等待收款码";
+                    order.is_expired = false;
+                    return; 
+                }
+
+                if (diff <= 0) {
+                    order.countdown_text = "已过期";
+                    order.is_expired = true;
+                    clearInterval(this.orderTimers[orderId]);
+                } else {
+                    order.is_expired = false;
+                    const minutes = Math.floor(diff / 1000 / 60);
+                    const seconds = Math.floor((diff / 1000) % 60);
+                    order.countdown_text = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+                }
+            },
+            
+            formatCountdown(expiresAt) {
+                if (!expiresAt) return '--:--';
+                const now = new Date();
+                const expires = new Date(expiresAt);
+                const diff = expires - now;
+                
+                if (diff <= 0) return '已过期';
+                
+                const minutes = Math.floor(diff / 1000 / 60);
+                const seconds = Math.floor((diff / 1000) % 60);
+                return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            },
+            
+            formatDate(str) {
+                return new Date(str).toLocaleString();
+            },
+            
+            getTelegramLink(contact) {
+                if (!contact) return '#';
+                const username = contact.replace('@', '');
+                return `https://t.me/${username}`;
+            },
+
+            async openBalanceLogs() {
+                if (!this.user.id) return this.openAuth('login');
+                this.balanceLogModal.open = true;
+                this.balanceLogModal.loading = true;
+                try {
+                    const res = await axios.get(`${API_BASE}/api/user/balance_logs?userId=${this.user.id}`);
+                    this.balanceLogModal.list = res.data || [];
+                } catch(e) {
+                    this.balanceLogModal.list = [];
+                } finally {
+                    this.balanceLogModal.loading = false;
+                }
+            },
+
+            async openRecordModal(type) {
+                if (!this.user.id) return this.openAuth('login');
+                
+                this.recordModal.type = type;
+                this.recordModal.title = type === 'recharge' ? '充值记录' : '提现记录';
+                this.recordModal.list = []; 
+                this.recordModal.loading = true;
+                this.recordModal.open = true; 
+                
+               try {
+                    const res = await axios.get(`${API_BASE}/api/user/records?userId=${this.user.id}&type=${type}`);
+                    this.recordModal.list = Array.isArray(res.data) ? res.data : [];
+                } catch(e) {
+                    console.error(e);
+                    this.recordModal.list = [];
+                } finally {
+                    this.recordModal.loading = false;
+                }
+            },
+            
+            openWalletAction(type) {
+                if (type === 'recharge') {
+                    this.openRechargeModal();
+                } else {
+                    this.openWithdrawModal();
+                }
+            },
+
+            async pollUpdates() {
+                try {
+                    const publicRes = await axios.get(`${API_BASE}/api/public/data`);
+                    const d = publicRes.data;
+                    this.products = d.products || [];
+                    this.settings.rate = d.rate;
+                    this.settings.feeRate = d.feeRate;
+                    this.settings.announcement = d.announcement;
+                } catch (e) {}
+
+                if (!this.user.id) return;
+
+                try {
+                    const balanceRes = await axios.get(`${API_BASE}/api/user/balance?userId=${this.user.id}`);
+                    if (balanceRes.data.success) {
+                        this.user.balance = balanceRes.data.balance;
+                        localStorage.setItem('nexus_user', JSON.stringify(this.user));
+                    }
+
+                    const ordersRes = await axios.get(`${API_BASE}/api/order?userId=${this.user.id}`);
+                    const newOrders = ordersRes.data || [];
+                    
+                    this.myOrders = newOrders;
+                    this.startOrderTimers(); 
+
+                    // 3. 检测二维码并弹窗
+                    for (const order of newOrders) {
+                        if (order.status === '待支付' && order.qrcode_url && !this.notifiedQRCodes.includes(order.order_id) && !this.isOrderExpired(order)) {
+                            
+                            this.notifiedQRCodes.push(order.order_id); 
+                            sessionStorage.setItem('notified_qrs', JSON.stringify(this.notifiedQRCodes));
+                            
+                            let payMethodText = '请使用扫码支付';
+                            if (order.payment_method === 'WeChat') payMethodText = '请使用微信扫码支付';
+                            else if (order.payment_method === 'Alipay') payMethodText = '请使用支付宝扫码支付';
+
+                            let timerInterval;
+
+                            Swal.fire({
+                                title: '客服已上传收款码',
+                                html: `
+                                    <div class="text-center">
+                                        <p class="mb-2">订单号: <b>${order.order_id}</b></p>
+                                        <p class="text-red-500 font-bold mb-4">请在 <b id="qr-timer">--:--</b> 内完成支付</p>
+                                        <img src="${order.qrcode_url}" style="max-width:200px; margin:0 auto; border:1px solid #eee; border-radius:8px; padding:5px;">
+                                        <p class="mt-3 text-sm text-slate-500">${payMethodText}</p>
+                                        <p class="mt-1 text-lg font-bold text-brand-600">¥${order.cny_amount}</p>
+                                    </div>
+                                `,
+                                icon: 'info',
+                                confirmButtonText: '我已支付，去上传凭证',
+                                showCancelButton: true,
+                                cancelButtonText: '稍后支付',
+                                 showDenyButton: true,
+                                denyButtonText: '二维码无法识别', 
+                                confirmButtonColor: '#3b82f6',
+                                allowOutsideClick: false,
+                                didOpen: () => {
+                                    const timerDisplay = document.getElementById('qr-timer');
+                                    const expires = new Date(order.expires_at).getTime();
+                                    
+                                    timerInterval = setInterval(() => {
+                                        const now = new Date().getTime();
+                                        const distance = expires - now;
+
+                                        if (distance < 0) {
+                                            clearInterval(timerInterval);
+                                            if(timerDisplay) timerDisplay.textContent = "已过期";
+                                            Swal.close(); // 过期自动关闭弹窗
+                                        } else {
+                                            const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+                                            const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+                                            if(timerDisplay) timerDisplay.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+                                        }
+                                    }, 1000);
+                                },
+                                willClose: () => {
+                                    clearInterval(timerInterval);
+                                }
+                           }).then((result) => {
+                                if (result.isConfirmed) {
+                                    this.paymentProofModal.orderId = order.order_id;
+                                    this.paymentProofModal.proofUrl = '';
+                                    this.paymentProofModal.file = null;
+                                    this.paymentProofModal.open = true;
+                                } else if (result.isDenied) {
+                                    this.reportQrIssue(order.order_id);
+                                }
+                            });
+                        }
+                    }
+
+                } catch (e) {
+                    // 静默失败
+                }
+            },
+        }
+    }).mount('#app')
+</script>
+</body>
+</html>
