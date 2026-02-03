@@ -97,30 +97,54 @@
             user-select: none;
         }
 
-        /* 客服悬浮窗 */
+/* 客服悬浮窗 */
         .chat-widget {
             position: fixed;
             bottom: 20px;
             right: 20px;
             z-index: 50;
         }
+        /* [修改] 客服窗口改为全屏遮罩弹窗模式 */
        .chat-window {
-    position: absolute;
-    bottom: 80px;
-    right: 0;
-    width: 340px; /* 稍微加宽 */
-    height: 480px; /* 加高 */
-    background: rgba(255, 255, 255, 0.95);
-    backdrop-filter: blur(10px);
-    border-radius: 24px; /* 更圆润 */
-    box-shadow: 0 20px 40px -5px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(0,0,0,0.05);
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-    transform-origin: bottom right;
-    transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1); /* 更丝滑的弹出动画 */
-}
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) !important; /* 强制居中 */
+            width: 90%; 
+            max-width: 400px;
+            height: 70vh; /* 高度自适应 */
+            background: #fff;
+            border-radius: 20px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            z-index: 101; /* 保证在最上层 */
+            border: 1px solid #e2e8f0;
+        }
+        /* [新增] 遮罩层背景 */
+        .chat-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(4px);
+            z-index: 100;
+        }
 
+        /* [新增] 移动端整体缩放优化 */
+        @media (max-width: 640px) {
+            html { font-size: 14px; } /* 缩小基准字体 */
+            .product-grid { gap: 10px !important; }
+.p-4 { padding: 1rem !important; } /* 减小内边距 */
+            
+            /* [修改] 当屏幕高度变小（键盘弹出）时，将导航栏强制固定在页面最底部，不隐藏，也不会飘在中间 */
+            @media (max-height: 600px) {
+                #mobile-bottom-nav {
+                    position: absolute !important;
+                    bottom: 0 !important;
+                }
+            }
+        }
 /* 消息列表动画 */
 .chat-msg {
     max-width: 85%;
@@ -404,9 +428,9 @@
                         <i class="ri-search-line absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-brand-500 transition"></i>
                         <input v-model="searchQuery" type="text" placeholder="搜索商品..." class="w-full md:w-64 bg-white border border-slate-200 rounded-full py-2.5 pl-10 pr-4 text-sm focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-50 transition shadow-sm">
                     </div>
-                    <div class="flex gap-2 overflow-x-auto pb-1 md:pb-0 w-full md:w-auto scrollbar-hide">
-                        <button @click="filterCat = 'all'" :class="filterCat === 'all' ? 'bg-slate-800 text-white shadow-lg' : 'bg-white text-slate-600 hover:bg-slate-50 border border-slate-200'" class="px-5 py-2.5 rounded-full text-sm font-medium whitespace-nowrap transition">全部</button>
-                        <button v-for="cat in categories" :key="cat" @click="filterCat = cat" :class="filterCat === cat ? 'bg-slate-800 text-white shadow-lg' : 'bg-white text-slate-600 hover:bg-slate-50 border border-slate-200'" class="px-5 py-2.5 rounded-full text-sm font-medium whitespace-nowrap transition">{{ cat }}</button>
+                    <div class="flex flex-wrap gap-2 w-full md:w-auto">
+                        <button @click="filterCat = 'all'" :class="filterCat === 'all' ? 'bg-slate-800 text-white shadow-lg' : 'bg-white text-slate-600 hover:bg-slate-50 border border-slate-200'" class="px-4 py-2 rounded-lg text-xs font-medium transition">全部</button>
+                        <button v-for="cat in categories" :key="cat" @click="filterCat = cat" :class="filterCat === cat ? 'bg-slate-800 text-white shadow-lg' : 'bg-white text-slate-600 hover:bg-slate-50 border border-slate-200'" class="px-4 py-2 rounded-lg text-xs font-medium transition">{{ cat }}</button>
                     </div>
                 </div>
             </div>
@@ -833,9 +857,9 @@
                         去结算 ({{ cartItems.length }}件商品)
                     </button>
                 </div>
-            </div>
-        </div> 
-<div class="md:hidden fixed bottom-6 left-1/2 transform -translate-x-1/2 w-[90%] max-w-[380px] h-[68px] bg-white/75 backdrop-blur-2xl border border-white/40 rounded-full shadow-[0_8px_32px_rgba(0,0,0,0.12)] z-50 flex justify-around items-center px-2">
+    </div>
+</div>
+<div id="mobile-bottom-nav" class="md:hidden fixed bottom-6 left-1/2 transform -translate-x-1/2 w-[90%] max-w-[380px] h-[68px] bg-white/75 backdrop-blur-2xl border border-white/40 rounded-full shadow-[0_8px_32px_rgba(0,0,0,0.12)] z-50 flex justify-around items-center px-2">
     
     <div @click="setView('home')" class="flex flex-col items-center justify-center w-16 h-full cursor-pointer transition-transform duration-200 active:scale-90" :class="view==='home' ? 'text-[#007aff]' : 'text-[#8e8e93]'">
         <i class="text-[24px] mb-0.5" :class="view==='home' ? 'ri-home-4-fill' : 'ri-home-4-line'"></i>
@@ -863,10 +887,12 @@
 
     <!-- 客服悬浮窗 -->
     <div class="chat-widget">
-        <div v-if="chatOpen" class="chat-window flex flex-col">
+        <div v-if="chatOpen" class="chat-overlay" @click="toggleChat"></div>
+        
+        <div v-if="chatOpen" class="chat-window flex flex-col animate-fade-in-up">
             <div class="bg-brand-500 p-4 text-white flex justify-between items-center flex-shrink-0">
                 <span class="font-bold flex items-center gap-2"><i class="ri-customer-service-2-line"></i> 在线客服</span>
-                <button @click="chatOpen = false" class="hover:bg-brand-600 rounded-full w-6 h-6 flex items-center justify-center"><i class="ri-close-line"></i></button>
+                <button @click="toggleChat" class="hover:bg-brand-600 rounded-full w-6 h-6 flex items-center justify-center"><i class="ri-close-line"></i></button>
             </div>
             <div id="chat-msgs" class="flex-1 overflow-y-auto p-4 bg-slate-50 flex flex-col gap-2">
                 <div v-for="(msg, idx) in chatMessages" :key="idx" :class="['chat-msg', msg.sender === 'user' ? 'user' : 'admin']">
@@ -1594,7 +1620,7 @@ withdrawCalc() {
         created() {
             this.initData(); // 提前加载数据
         },
-        mounted() {
+mounted() {
             localStorage.setItem('chat_session_id', this.chatSessionId);
             this.genCaptcha();
             this.startOrderTimers();
@@ -1603,6 +1629,22 @@ withdrawCalc() {
             setInterval(() => {
                 if (!document.hidden) this.pollUpdates();
             }, 8000);
+
+            // [新增] 监听物理返回键，如果有弹窗打开，则关闭弹窗而不是退出
+            window.addEventListener('popstate', (e) => {
+                // 如果有任何模态框打开，阻止返回并关闭它们
+                if (this.chatOpen || this.productDetailModal.open || this.buyModal.open || this.authModal.open || this.rechargeModal.open || this.withdrawModal.open || this.inviteModal.open || this.recordModal.open || this.balanceLogModal.open) {
+                    this.chatOpen = false;
+                    this.productDetailModal.open = false;
+                    this.buyModal.open = false;
+                    this.authModal.open = false;
+                    this.rechargeModal.open = false;
+                    this.withdrawModal.open = false;
+                    this.inviteModal.open = false;
+                    this.recordModal.open = false;
+                    this.balanceLogModal.open = false;
+                }
+            });
         },
         beforeUnmount() {
             if(this.chatPollTimer) clearInterval(this.chatPollTimer);
@@ -1818,10 +1860,13 @@ withdrawCalc() {
                 }
             },
 
-            // 客服逻辑
+           // 客服逻辑
             toggleChat() {
                 this.chatOpen = !this.chatOpen;
                 if(this.chatOpen) {
+                    // [新增] 打开时推入历史记录，这样按返回键就是 popstate 而不是退出
+                    history.pushState({ modal: 'chat' }, null, '');
+                    
                     this.pollChat(); // 立即拉取一次
                     this.unreadMessages = 0; // 清空未读小红点
                     
