@@ -346,21 +346,27 @@ html, body, div, section, main, ul, li {
         }
     </style>
 
-    <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#3b82f6">
-    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/11473/11473925.png">
+<link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#f8fafc">
+    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/2964/2964657.png">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="小暗网">
-
+    
+    <style>
+        #app-loading { position: fixed; inset: 0; background: #f8fafc; z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .spinner { w-12 h-12 border-4 border-brand-200 border-t-brand-500 rounded-full animate-spin }
+    </style>
 </head>
-<body class="antialiased min-h-screen flex flex-col">
-</head>
-<body class="antialiased min-h-screen flex flex-col">
+<body class="antialiased min-h-screen flex flex-col bg-slate-50">
 
 <div id="app" class="flex flex-col h-full" v-cloak>
+    <div id="app-loading" v-if="loading && !products.length">
+        <div class="w-16 h-16 border-4 border-blue-100 border-t-blue-600 rounded-full animate-spin mb-4"></div>
+        <div class="text-slate-400 text-sm font-bold tracking-widest">XAW LOADING...</div>
+    </div>
     
-    <nav class="fixed top-0 w-full z-50 bg-white/90 backdrop-blur-md border-b border-slate-200 shadow-sm">
+    <nav class="fixed top-0 w-full z-50 bg-white/90 backdrop-blur-md border-b border-slate-200 shadow-sm pt-[env(safe-area-inset-top)]">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex items-center justify-between h-16 gap-4">
 <div class="flex items-center gap-3 cursor-pointer flex-shrink-0" @click="setView('home')">
@@ -1746,31 +1752,86 @@ beforeUnmount() {
             Object.values(this.orderTimers).forEach(timer => clearInterval(timer));
         },
         methods: {
-            // 【新增】显示添加到桌面引导
+// 【新增】显示添加到桌面引导
             showAddToHomeGuide(source = 'user') {
+                // 如果已经是APP模式，不显示
                 if (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true) {
-                    if(source === 'user') Swal.fire('已安装', '您正在使用桌面快捷方式访问', 'success');
+                    if(source === 'user') {
+                        const Toast = Swal.mixin({ toast: true, position: 'top', showConfirmButton: false, timer: 2000 });
+                        Toast.fire({ icon: 'success', title: '当前已是APP模式' });
+                    }
                     return;
                 }
 
-                const title = source === 'purchase' ? '购买成功！优化体验？' : '添加到桌面';
-                const whyMsg = `<div class="text-sm text-slate-500 mt-2 mb-4 bg-blue-50 p-3 rounded-lg text-left">
-                    <p class="font-bold text-blue-700 mb-1">为什么添加？</p>
-                    将网站添加到桌面，可获得类似App的流畅体验，方便下次快速访问。
-                </div>`;
+                // [修改] 升级版美化弹窗 HTML，带头部渐变和更清晰的引导
+                const iosGuideHtml = `
+                    <div class="relative overflow-hidden">
+                        <div class="absolute top-0 left-0 w-full h-24 bg-gradient-to-r from-blue-600 to-indigo-600 -mt-6"></div>
+                        
+                        <div class="relative z-10 flex flex-col items-center pt-8">
+                            <div class="w-20 h-20 bg-white rounded-2xl flex items-center justify-center mb-4 shadow-lg p-1">
+                                <div class="w-full h-full bg-slate-900 rounded-xl flex items-center justify-center border border-slate-100">
+                                    <i class="ri-spy-fill text-4xl text-[#00ff41]"></i>
+                                </div>
+                            </div>
+                            
+                            <h3 class="text-xl font-black text-slate-800 mb-1">安装到桌面</h3>
+                            <p class="text-xs text-slate-500 mb-6 px-4">获得全屏体验，防止域名丢失，访问更稳定</p>
+                            
+                            <div class="w-full bg-slate-50 rounded-xl p-5 text-left border border-slate-100 space-y-4 shadow-inner">
+                                <div class="flex items-start gap-4">
+                                    <div class="w-8 h-8 rounded-full bg-white text-blue-600 border border-blue-100 flex items-center justify-center text-sm font-bold shadow-sm shrink-0">1</div>
+                                    <div class="text-sm text-slate-600 leading-snug pt-1">
+                                        点击浏览器底部的 <span class="inline-flex items-center justify-center w-6 h-6 bg-slate-200 rounded mx-1 text-blue-600"><i class="ri-upload-2-line"></i></span> 分享按钮
+                                    </div>
+                                </div>
+                                <div class="flex items-start gap-4">
+                                    <div class="w-8 h-8 rounded-full bg-white text-blue-600 border border-blue-100 flex items-center justify-center text-sm font-bold shadow-sm shrink-0">2</div>
+                                    <div class="text-sm text-slate-600 leading-snug pt-1">
+                                        上滑菜单找到并点击 <span class="font-bold text-slate-800 bg-white px-2 py-0.5 rounded border border-slate-200 text-xs shadow-sm">添加到主屏幕</span>
+                                    </div>
+                                </div>
+                                <div class="flex items-start gap-4">
+                                    <div class="w-8 h-8 rounded-full bg-white text-blue-600 border border-blue-100 flex items-center justify-center text-sm font-bold shadow-sm shrink-0">3</div>
+                                    <div class="text-sm text-slate-600 leading-snug pt-1">
+                                        点击右上角的 <span class="text-blue-600 font-bold">"添加"</span> 即可
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
 
-                if (this.isIOS) {
+                // [修改] 安卓/PC 引导 HTML
+                const androidGuideHtml = `
+                    <div class="flex flex-col items-center pt-4">
+                        <div class="w-16 h-16 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center mb-4 shadow-lg text-white">
+                            <i class="ri-download-cloud-2-fill text-3xl"></i>
+                        </div>
+                        <h3 class="text-lg font-bold text-slate-800">安装应用</h3>
+                        <p class="text-sm text-slate-500 mt-2 mb-6 text-center px-4">将网站安装到您的设备，像原生APP一样使用。</p>
+                    </div>
+                `;
+
+if (this.isIOS) {
+                    // [修改] 针对 iOS 的美化配置
                     Swal.fire({
-                        title: title,
-                        html: `${whyMsg}
-                            <div class="text-left text-slate-700 space-y-2 border-t pt-4 text-sm">
-                                <p>1. 点击浏览器底部中间的 <i class="ri-upload-2-line text-blue-500 font-bold"></i> 分享图标</p>
-                                <p>2. 上滑找到 <span class="font-bold">"添加到主屏幕"</span></p>
-                                <p>3. 点击右上角 <span class="font-bold">"添加"</span></p>
-                            </div>`,
-                        icon: 'info',
-                        confirmButtonText: '知道了',
-                        confirmButtonColor: '#3b82f6'
+                        html: iosGuideHtml,
+                        showConfirmButton: true,
+                        confirmButtonText: '我知道了',
+                        // 改成品牌蓝色
+                        confirmButtonColor: '#3b82f6', 
+                        customClass: {
+                            popup: 'rounded-3xl',
+                            content: 'p-0'
+                        },
+                        buttonsStyling: false,
+                        didOpen: () => {
+                            // 给按钮添加样式
+                            const btn = Swal.getConfirmButton();
+                            // [修改] 这里把 bg-slate-900 改成了 btn-gradient (你网站通用的蓝色渐变)
+                            btn.className = 'w-full mt-4 btn-gradient text-white font-bold py-3.5 rounded-xl shadow-lg active:scale-95 transition';
+                        }
                     });
                 } else {
                     Swal.fire({
@@ -2304,13 +2365,14 @@ const res = await axios.post(`${API_BASE}/api/order`, {
                     // 3. 处理响应
                     if (res.data.success) {
                         this.buyModal.open = false;
+if (res.data.status === '已支付') {
+                            // [修改] 这里的 800 改成 600000 (10分钟)
+                            if (!window.matchMedia('(display-mode: standalone)').matches && !window.navigator.standalone) {
+                                setTimeout(() => {
+                                    this.showAddToHomeGuide('purchase'); 
+                                }, 600000);
+                            }
 
-                        // 【新增】下单成功后，延迟1.5秒尝试引导安装
-                        setTimeout(() => {
-                            this.showAddToHomeGuide('purchase');
-                        }, 1500);
-                        
-                        if (res.data.status === '已支付') {
                             Swal.fire({
                                 icon: 'success',
                                 title: '支付成功',
@@ -2983,7 +3045,7 @@ const res = await axios.post(`${API_BASE}/api/order`, {
                 }
             },
 
-            async pollUpdates() {
+async pollUpdates() {
                 try {
                     const publicRes = await axios.get(`${API_BASE}/api/public/data`);
                     const d = publicRes.data;
@@ -3004,6 +3066,29 @@ const res = await axios.post(`${API_BASE}/api/order`, {
 
                     const ordersRes = await axios.get(`${API_BASE}/api/order?userId=${this.user.id}`);
                     const newOrders = ordersRes.data || [];
+
+                    // [新增] 检测是否有订单刚刚变成了"已支付"
+                    // 逻辑：遍历新订单，如果在老数据里是"待支付"，但在新数据里是"已支付"，说明刚刚到账
+                    if (this.myOrders.length > 0) {
+                        for (const newOrder of newOrders) {
+                            const oldOrder = this.myOrders.find(o => o.order_id === newOrder.order_id);
+                            // 如果找到了旧订单，且旧状态不是已支付，新状态是已支付
+                           if (oldOrder && oldOrder.status !== '已支付' && newOrder.status === '已支付') {
+                                // 播放提示音
+                                this.messageSound.play().catch(()=>{});
+                                Swal.fire({ icon: 'success', title: '支付成功', text: '您的订单已到账！', timer: 2000, showConfirmButton: false });
+                                
+                                // 弹出安装引导
+                                if (!window.matchMedia('(display-mode: standalone)').matches && !window.navigator.standalone) {
+                                    // [修改] 设置延迟时间：10分钟 = 600000 毫秒
+                                    setTimeout(() => {
+                                        this.showAddToHomeGuide('purchase');
+                                    }, 600000); 
+                                }
+                                break; // 只弹一次，避免多个订单同时到账弹窗重叠
+                            }
+                        }
+                    }
                     
                     this.myOrders = newOrders;
                     this.startOrderTimers(); 
