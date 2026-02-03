@@ -32,12 +32,15 @@
             }
         }
     </script>
-    <style>
+<style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
             background-color: #f8fafc;
             color: #334155;
             -webkit-tap-highlight-color: transparent;
+            /* [新增] 强制禁止横向滚动，修复白边和滑动问题 */
+            overflow-x: hidden;
+            width: 100%;
         }
 
         .btn-gradient {
@@ -63,27 +66,20 @@
             position: relative;
             white-space: nowrap;
         }
-        .nav-item.active {
-            color: #3b82f6;
-            font-weight: 600;
-        }
-        /* 仅在桌面端显示底部指示条 */
-        @media (min-width: 768px) {
-            .nav-item::after {
-                content: '';
-                position: absolute;
-                bottom: -22px;
-                left: 0;
-                width: 0;
-                height: 3px;
-                background: #6366f1;
-                transition: width 0.3s ease;
-                border-radius: 3px 3px 0 0;
-            }
-            .nav-item.active::after {
-                width: 100%;
+@media (max-width: 640px) {
+            html { font-size: 14px; } /* 缩小基准字体 */
+            .product-grid { gap: 10px !important; }
+.p-4 { padding: 1rem !important; } /* 减小内边距 */
+            
+            /* [修改] 当屏幕高度变小（键盘弹出）时，将导航栏强制固定在页面最底部，不隐藏，也不会飘在中间 */
+            @media (max-height: 600px) {
+                #mobile-bottom-nav {
+                    position: absolute !important;
+                    bottom: 0 !important;
+                }
             }
         }
+/* 消息列表动画 */
 
         .font-fix {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif !important;
@@ -131,20 +127,27 @@
             z-index: 100;
         }
 
-        /* [新增] 移动端整体缩放优化 */
+/* [新增] 移动端整体缩放优化 */
         @media (max-width: 640px) {
             html { font-size: 14px; } /* 缩小基准字体 */
             .product-grid { gap: 10px !important; }
-.p-4 { padding: 1rem !important; } /* 减小内边距 */
-            
-            /* [修改] 当屏幕高度变小（键盘弹出）时，将导航栏强制固定在页面最底部，不隐藏，也不会飘在中间 */
-            @media (max-height: 600px) {
-                #mobile-bottom-nav {
-                    position: absolute !important;
-                    bottom: 0 !important;
-                }
+            .p-4 { padding: 1rem !important; } /* 减小内边距 */
+        }
+
+        /* [修复] 将这段从上面的花括号里移出来，解决键盘弹出时导航栏遮挡输入框的问题 */
+        @media (max-height: 600px) {
+            #mobile-bottom-nav, .chat-widget {
+                display: none !important;
             }
         }
+
+        /* [修复] 强制禁止 HTML 和 Body 横向滚动，彻底解决白边和左右滑动 */
+        html, body {
+            overflow-x: hidden !important;
+            width: 100%;
+            max-width: 100vw;
+        }
+
 /* 消息列表动画 */
 .chat-msg {
     max-width: 85%;
@@ -1799,7 +1802,7 @@ mounted() {
                 this.mobileMenuOpen = false;
             },
             
-        checkLoginAndGo(target) {
+checkLoginAndGo(target) {
                 if (!this.user.id) {
                     this.openAuth('login');
                     return;
@@ -1815,6 +1818,8 @@ mounted() {
 
             // 详情与图片逻辑
             openProductDetail(prod) {
+                // [新增] 写入历史记录，防止点返回键直接退出网站
+                history.pushState({ modal: 'product' }, null, '');
                 this.productDetailModal.prod = prod;
                 this.currentImgIndex = 0;
                 this.productDetailModal.open = true;
@@ -1969,6 +1974,8 @@ mounted() {
 
             // 认证逻辑
             openAuth(mode) {
+                // [新增] 写入历史记录
+                history.pushState({ modal: 'auth' }, null, '');
                 this.authModal.mode = mode;
                 this.authModal.open = true;
                 this.authForm = { contact: '', password: '', confirmPassword: '', captchaInput: '', inviteCode: '' };
@@ -2077,6 +2084,7 @@ async handleAuth() {
             openBuyModal(prod) {
                 this.productDetailModal.open = false; 
                 if (!this.user.id) return this.openAuth('login');
+                history.pushState({ modal: 'buy' }, null, '');
                 this.buyModal.prod = prod;
                 this.buyModal.open = true;
                 this.buyForm = { 
@@ -2389,6 +2397,7 @@ async submitOrder() {
             // 充值功能
             openRechargeModal() {
                 if (!this.user.id) return this.openAuth('login');
+                history.pushState({ modal: 'recharge' }, null, '');
                 this.rechargeModal.open = true;
                 this.rechargeForm = { amount: 10, method: 'USDT' };
             },
@@ -2449,6 +2458,7 @@ async submitOrder() {
                 if ((this.user.balance || 0) < 1) {
                     return Swal.fire('提示', '余额不足1 USDT，无法提现', 'warning');
                 }
+                history.pushState({ modal: 'withdraw' }, null, '');
                 this.withdrawModal.open = true;
                 this.withdrawForm = { amount: Math.min(this.user.balance || 0, 10), address: '' };
             },
