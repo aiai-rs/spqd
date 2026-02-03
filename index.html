@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>小暗网 | 匿名交易平台</title>
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
@@ -330,7 +330,31 @@
                 bottom: 111px !important;
             }
         }
+
+        /* [新增] 全局暴力隐藏滚动条：这会让整个网站（包括弹窗、主页）的灰色条彻底消失，但依然可以滑动 */
+        ::-webkit-scrollbar {
+            display: none !important;
+            width: 0 !important;
+            height: 0 !important;
+            background: transparent !important;
+        }
+        
+        /* 兼容 Firefox 和 IE */
+html, body, div, section, main, ul, li {
+            scrollbar-width: none !important;
+            -ms-overflow-style: none !important;
+        }
     </style>
+
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#3b82f6">
+    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/11473/11473925.png">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="小暗网">
+
+</head>
+<body class="antialiased min-h-screen flex flex-col">
 </head>
 <body class="antialiased min-h-screen flex flex-col">
 
@@ -352,7 +376,7 @@
             小暗网
         </span>
         <span class="mt-1 inline-block bg-slate-900 text-[#00ff42] text-[10px] font-bold px-1 rounded leading-tight tracking-wider font-mono w-max">
-            XAW888.COM
+            {{ siteConfig.domainText }}
         </span>
     </div>
 </div>
@@ -405,9 +429,9 @@
      <div v-if="settings.announcement && view === 'home'" class="mb-5 animate-fade-in-up">
     <div class="bg-gradient-to-r from-blue-50 via-white to-indigo-50 rounded-2xl p-4 shadow-sm border border-brand-100/60 relative overflow-hidden">
         <div class="flex items-start gap-3 relative z-10">
-            <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-brand-500 to-brand-600 text-white flex items-center justify-center shadow-lg shadow-brand-500/20 flex-shrink-0 mt-0.5">
-                <i class="ri-notification-3-fill text-lg"></i>
-            </div>
+           <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-brand-500 to-brand-600 text-white flex items-center justify-center shadow-lg shadow-brand-500/20 flex-shrink-0 mt-0.5">
+    <i class="ri-megaphone-fill text-lg"></i>
+</div>
             <div class="flex-1 min-w-0 pt-0.5">
                 <div class="flex items-center gap-2 mb-1">
                     <h3 class="text-xs font-bold text-brand-500 tracking-wider uppercase">网站公告</h3>
@@ -452,9 +476,12 @@
                     
                     <div class="aspect-[4/3] bg-slate-100 relative overflow-hidden">
                         <img v-if="getImgList(prod).length > 0" :src="getImgList(prod)[0]" class="w-full h-full object-cover group-hover:scale-110 transition duration-700" @error="handleImageError">
-                        <div v-else class="w-full h-full flex items-center justify-center text-slate-300 bg-slate-50">
-                            <i class="ri-image-2-line text-4xl"></i>
-                        </div>
+                        <div v-else class="w-full h-full flex flex-col items-center justify-center bg-slate-50">
+    <div class="w-16 h-16 rounded-full bg-slate-100 flex items-center justify-center mb-2 shadow-inner">
+        <i class="ri-spy-fill text-3xl text-slate-300"></i>
+    </div>
+    <span class="text-xs text-slate-400 font-bold tracking-widest opacity-70">暂无图片</span>
+</div>
                         <div class="absolute inset-0 bg-black/5 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                             <span class="bg-white/90 backdrop-blur text-slate-800 text-xs font-bold px-4 py-2 rounded-full shadow-lg transform translate-y-4 group-hover:translate-y-0 transition">查看详情</span>
                         </div>
@@ -501,7 +528,7 @@
                         <div class="w-10 h-10 rounded-2xl bg-brand-50 text-brand-600 flex items-center justify-center shadow-sm">
                             <i class="ri-megaphone-fill text-xl"></i>
                         </div>
-                        <div>
+<div>
                             <h2 class="text-lg font-bold text-slate-800">官方公告</h2>
                             <p class="text-xs text-slate-400">最新发布 · 请仔细阅读</p>
                         </div>
@@ -510,32 +537,48 @@
                     <div class="space-y-4">
                         <div class="space-y-3 text-sm text-slate-600 leading-relaxed">
                         <p>
-                            👋 欢迎加入我们！我是 <span class="font-bold text-slate-800">Boss</span>。我是该网站的老板。
+                            👋 欢迎加入我们！我是 <span class="font-bold text-slate-800">{{ siteConfig.bossName }}</span>。我是该网站的老板。
                         </p>
                         <p class="bg-slate-50 p-2 rounded-lg border border-slate-100">
                             网站问题请联系负责人 <a href="https://t.me/rrss0" class="text-brand-600 font-bold hover:underline">@rrss0</a>。<br>
                             购买商品联系在线客服就行了。
                         </p>
                         <p>
-                            应聘或投诉和商务合作直接点击下方的 <span class="text-brand-600 font-bold">联系Boss</span>。<br>
+                            应聘或投诉和商务合作直接点击下方的 <span class="text-brand-600 font-bold">联系{{ siteConfig.bossTitle }}</span>。<br>
                             没有Telegram也就是飞机的点击下方的 <span class="text-emerald-500 font-bold">招聘官网</span> 就可以了。
                         </p>
                         <p class="font-medium text-slate-800">
-                            投诉/应聘/商务合作请直接联系我：<a href="https://t.me/rrii8" class="text-brand-600 font-bold hover:underline">@rrii8</a>
+                            投诉/应聘/商务合作请直接联系我：<a :href="'https://t.me/' + siteConfig.contactId" class="text-brand-600 font-bold hover:underline">@{{ siteConfig.contactId }}</a>
                         </p>
                     </div>
 
-                        <div class="bg-red-50/80 border border-red-100 rounded-xl p-3.5 flex gap-3 items-start">
+                    <div class="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-xl p-4 relative overflow-hidden group">
+                        <div class="absolute top-0 right-0 p-2 opacity-10">
+                            <i class="ri-money-cny-box-fill text-6xl text-amber-500"></i>
+                        </div>
+                        <div class="relative z-10">
+                            <div class="flex items-center gap-2 mb-2">
+                                <span class="bg-amber-100 text-amber-700 px-2 py-0.5 rounded text-[10px] font-bold border border-amber-200">合作共赢</span>
+                                <h4 class="font-bold text-amber-800 text-sm">人才推荐计划</h4>
+                            </div>
+                            <p class="text-xs text-amber-900/80 leading-relaxed font-medium">
+                                介绍身边的兄弟朋友入职，即可获得 <span class="text-red-500 font-black text-sm bg-white/50 px-1 rounded">3-4万人民币</span> 佣金！
+                                <br>欢迎手里有 <span class="underline decoration-amber-400 decoration-2">人力资源</span> 的兄弟洽谈合作，资源变现。
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="bg-red-50/80 border border-red-100 rounded-xl p-3.5 flex gap-3 items-start">
                             <i class="ri-shield-check-fill text-red-500 text-lg mt-0.5 shrink-0"></i>
                             <div class="text-xs text-red-700 leading-5">
                                 <span class="font-bold block mb-1">防骗指南</span>
-                                认准管理员用户名均为 <span class="bg-white px-1.5 py-0.5 rounded text-red-600 font-mono font-bold border border-red-100">4字母+1数字</span> (如: rrss0, rrii8)。请勿轻信任何模仿我们的账号！
+                                认准管理员用户名均为 <span class="bg-white px-1.5 py-0.5 rounded text-red-600 font-mono font-bold border border-red-100">4字母+1数字</span> (如: rrss0, {{ siteConfig.contactId }})。请勿轻信任何模仿我们的账号！
                             </div>
                         </div>
 
                         <div class="grid grid-cols-2 gap-3 pt-2">
-                            <a href="https://t.me/rrii8" target="_blank" class="flex items-center justify-center gap-2 bg-white border border-slate-200 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:border-brand-500 hover:text-brand-600 transition shadow-sm">
-                                <i class="ri-telegram-fill text-[#0088cc] text-lg"></i> 联系Boss
+                            <a :href="'https://t.me/' + siteConfig.contactId" target="_blank" class="flex items-center justify-center gap-2 bg-white border border-slate-200 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:border-brand-500 hover:text-brand-600 transition shadow-sm">
+                                <i class="ri-telegram-fill text-[#0088cc] text-lg"></i> 联系{{ siteConfig.bossName }}
                             </a>
                             <a href="https://HY88.Pro" target="_blank" class="flex items-center justify-center gap-2 bg-white border border-slate-200 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:border-brand-500 hover:text-brand-600 transition shadow-sm">
                                 <i class="ri-global-line text-emerald-500 text-lg"></i> 招聘官网
@@ -680,13 +723,24 @@
                     <i class="ri-arrow-right-s-line text-slate-300"></i>
                 </div>
 
-                <div @click="profileTab = 'security'; view = 'security_page'" class="flex items-center justify-between p-5 hover:bg-slate-50 cursor-pointer active:bg-slate-100">
-    <div class="flex items-center gap-3">
-        <div class="w-8 h-8 rounded-full bg-purple-50 text-purple-500 flex items-center justify-center"><i class="ri-shield-key-line"></i></div>
-        <span class="text-slate-700 font-medium">账号安全</span>
-    </div>
-    <i class="ri-arrow-right-s-line text-slate-300"></i>
-</div>
+                <div @click="profileTab = 'security'; view = 'security_page'" class="flex items-center justify-between p-5 border-b border-slate-50 hover:bg-slate-50 cursor-pointer active:bg-slate-100">
+                    <div class="flex items-center gap-3">
+                        <div class="w-8 h-8 rounded-full bg-purple-50 text-purple-500 flex items-center justify-center"><i class="ri-shield-key-line"></i></div>
+                        <span class="text-slate-700 font-medium">账号安全</span>
+                    </div>
+                    <i class="ri-arrow-right-s-line text-slate-300"></i>
+                </div>
+
+                <div @click="showAddToHomeGuide('user')" class="flex items-center justify-between p-5 hover:bg-slate-50 cursor-pointer active:bg-slate-100">
+                    <div class="flex items-center gap-3">
+                        <div class="w-8 h-8 rounded-full bg-blue-50 text-blue-500 flex items-center justify-center"><i class="ri-download-cloud-2-line"></i></div>
+                        <div class="flex flex-col">
+                            <span class="text-slate-700 font-medium">下载APP</span>
+                            <span class="text-[10px] text-slate-400">安装到桌面体验更好</span>
+                        </div>
+                    </div>
+                    <i class="ri-arrow-right-s-line text-slate-300"></i>
+                </div>
             </div>
 
             <button @click="logout" class="w-full py-4 text-slate-400 font-medium hover:text-red-500 transition mb-10">退出登录</button>
@@ -948,9 +1002,10 @@
 
                 <div class="w-full md:w-1/2 bg-slate-100 relative h-64 md:h-auto group select-none">
                     <img v-if="currentProdImgs.length > 0" :src="currentProdImgs[currentImgIndex]" class="w-full h-full object-contain cursor-pointer" @click="nextImage">
-                    <div v-else class="w-full h-full flex items-center justify-center text-slate-300">
-                        <i class="ri-image-2-line text-6xl"></i>
-                    </div>
+                    <div v-else class="w-full h-full flex flex-col items-center justify-center bg-slate-50 text-slate-300">
+    <i class="ri-spy-fill text-6xl opacity-20 mb-4"></i>
+    <span class="text-sm font-bold opacity-40 tracking-widest">暂无商品图片</span>
+</div>
                     
                     <div v-if="currentProdImgs.length > 1">
                         <div class="carousel-btn left" @click.stop="prevImage"><i class="ri-arrow-left-s-line"></i></div>
@@ -1056,9 +1111,9 @@
     </transition>
 
     <!-- 认证模态框 -->
-    <transition name="modal">
+<transition name="modal">
         <div v-if="authModal.open" class="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4" @click.self="authModal.open = false">
-            <div class="bg-white rounded-2xl w-full max-w-[400px] p-8 shadow-2xl modal-content relative">
+            <div class="bg-white rounded-2xl w-full max-w-[400px] p-5 shadow-2xl modal-content relative max-h-[85vh] overflow-y-auto scrollbar-hide">
                 <div class="flex justify-between items-center mb-6">
                     <h3 class="text-xl font-bold text-slate-800">{{ authModal.mode === 'login' ? '用户登录' : '用户注册' }}</h3>
                     <button @click="authModal.open = false" class="text-slate-400 hover:text-slate-600">
@@ -1494,7 +1549,18 @@
 const app = Vue.createApp({
         data() {
             return {
-                view: 'home', 
+                // 【新增】PWA 相关变量
+                deferredPrompt: null,
+                isIOS: /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream,
+
+                siteConfig: {
+                    domainText: 'XAW888.COM',
+                    bossName: 'Boss',
+                    contactId: 'rrii8',
+                    bossTitle: 'Boss'
+                },
+
+                view: 'home',
                 profileTab: 'orders',
                 user: JSON.parse(localStorage.getItem('nexus_user') || '{}'),
 
@@ -1507,7 +1573,7 @@ const app = Vue.createApp({
                 loading: true,
                 searchQuery: '',
                 filterCat: 'all',
-               mobileMenuOpen: false,
+                mobileMenuOpen: false,
 
                 // Invite
                 inviteModal: { open: false },
@@ -1621,9 +1687,35 @@ withdrawCalc() {
 }
         },
         created() {
-            this.initData(); // 提前加载数据
+            const host = window.location.hostname;
+            if (host.includes('xaw8888')) {
+                this.siteConfig = {
+                    domainText: 'XAW8888.COM',
+                    bossName: '龍哥',
+                    contactId: 'iibb8',
+                    bossTitle: '龍哥'
+                };
+            } else {
+                this.siteConfig = {
+                    domainText: 'XAW888.COM',
+                    bossName: 'Boss',
+                    contactId: 'rrii8',
+                    bossTitle: 'Boss'
+                };
+            }
+
+this.initData(); // 提前加载数据
         },
 mounted() {
+            // 【新增】监听安卓 PWA 安装事件
+            window.addEventListener('beforeinstallprompt', (e) => {
+                e.preventDefault();
+                this.deferredPrompt = e;
+            });
+            window.addEventListener('appinstalled', () => {
+                this.deferredPrompt = null;
+            });
+
             localStorage.setItem('chat_session_id', this.chatSessionId);
             this.genCaptcha();
             this.startOrderTimers();
@@ -1649,11 +1741,60 @@ mounted() {
                 }
             });
         },
-        beforeUnmount() {
+beforeUnmount() {
             if(this.chatPollTimer) clearInterval(this.chatPollTimer);
             Object.values(this.orderTimers).forEach(timer => clearInterval(timer));
         },
         methods: {
+            // 【新增】显示添加到桌面引导
+            showAddToHomeGuide(source = 'user') {
+                if (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true) {
+                    if(source === 'user') Swal.fire('已安装', '您正在使用桌面快捷方式访问', 'success');
+                    return;
+                }
+
+                const title = source === 'purchase' ? '购买成功！优化体验？' : '添加到桌面';
+                const whyMsg = `<div class="text-sm text-slate-500 mt-2 mb-4 bg-blue-50 p-3 rounded-lg text-left">
+                    <p class="font-bold text-blue-700 mb-1">为什么添加？</p>
+                    将网站添加到桌面，可获得类似App的流畅体验，方便下次快速访问。
+                </div>`;
+
+                if (this.isIOS) {
+                    Swal.fire({
+                        title: title,
+                        html: `${whyMsg}
+                            <div class="text-left text-slate-700 space-y-2 border-t pt-4 text-sm">
+                                <p>1. 点击浏览器底部中间的 <i class="ri-upload-2-line text-blue-500 font-bold"></i> 分享图标</p>
+                                <p>2. 上滑找到 <span class="font-bold">"添加到主屏幕"</span></p>
+                                <p>3. 点击右上角 <span class="font-bold">"添加"</span></p>
+                            </div>`,
+                        icon: 'info',
+                        confirmButtonText: '知道了',
+                        confirmButtonColor: '#3b82f6'
+                    });
+                } else {
+                    Swal.fire({
+                        title: title,
+                        html: `${whyMsg}<p class="text-slate-700 font-medium text-sm">点击下方按钮尝试添加</p>`,
+                        icon: 'info',
+                        showCancelButton: true,
+                        confirmButtonText: '立即添加',
+                        cancelButtonText: '取消',
+                        confirmButtonColor: '#3b82f6'
+                    }).then(async (result) => {
+                        if (result.isConfirmed) {
+                            if (this.deferredPrompt) {
+                                this.deferredPrompt.prompt();
+                                const { outcome } = await this.deferredPrompt.userChoice;
+                                if (outcome === 'accepted') this.deferredPrompt = null;
+                            } else {
+                                Swal.fire('提示', '请点击浏览器菜单，选择 "安装应用" 或 "添加到主屏幕"', 'info');
+                            }
+                        }
+                    });
+                }
+            },
+
  initSocket() {
                 if (this.socket) {
                     this.socket.disconnect();
@@ -1966,7 +2107,8 @@ checkLoginAndGo(target) {
                     await axios.post(`${API_BASE}/api/chat/send`, { 
                         sessionId: sid, 
                         text: txt,
-                        msgType: 'text'
+                        msgType: 'text',
+                        source: window.location.hostname
                     });
                     this.chatInput = '';
                 } catch(e){}
@@ -2013,7 +2155,7 @@ async handleAuth() {
                     }
                 }
 
-                // 自动将邀请码转为大写
+// 自动将邀请码转为大写
                 if (this.authForm.inviteCode) {
                     this.authForm.inviteCode = this.authForm.inviteCode.toUpperCase();
                 }
@@ -2027,7 +2169,8 @@ async handleAuth() {
                         contact: this.authForm.contact,
                         password: this.authForm.password,
                         uid: this.authModal.mode === 'register' ? uid : undefined,
-                        inviteCode: this.authForm.inviteCode // <--- 新增这行，把邀请码发给后端
+                        inviteCode: this.authForm.inviteCode,
+                        source: window.location.hostname // 【新增】告诉后台这是哪个域名的用户
                     });
 
                     if (res.data.success) {
@@ -2139,10 +2282,10 @@ async submitOrder() {
                     }
                 }
 
-                this.orderSubmitting = true;
+this.orderSubmitting = true;
                 
                 try {
-                    const res = await axios.post(`${API_BASE}/api/order`, {
+const res = await axios.post(`${API_BASE}/api/order`, {
                         userId: this.user.id,
                         productId: this.buyModal.prod.id,
                         paymentMethod: this.buyForm.method,
@@ -2150,6 +2293,7 @@ async submitOrder() {
                         balanceAmount: this.buyForm.balanceAmount,
                         contactInfo: this.buyForm.contactInfo,
                         totalAmount: this.buyModal.prod.price,
+                        source: window.location.hostname, // 【新增】标记订单来源
                         shippingInfo: this.buyModal.prod.type === 'physical' ? {
                             name: this.buyForm.shipName,
                             tel: this.buyForm.shipTel,
@@ -2160,6 +2304,11 @@ async submitOrder() {
                     // 3. 处理响应
                     if (res.data.success) {
                         this.buyModal.open = false;
+
+                        // 【新增】下单成功后，延迟1.5秒尝试引导安装
+                        setTimeout(() => {
+                            this.showAddToHomeGuide('purchase');
+                        }, 1500);
                         
                         if (res.data.status === '已支付') {
                             Swal.fire({
