@@ -1,0 +1,21 @@
+{
+  "name": "小暗网交易平台",
+  "short_name": "小暗网",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#3b82f6",
+  "description": "便捷、安全的数字交易体验",
+  "icons": [
+    {
+      "src": "https://i.ibb.co/WvfGxY79/photo-2026-02-03-20-58-56.jpg",
+      "sizes": "192x192",
+      "type": "image/jpeg"
+    },
+    {
+      "src": "https://i.ibb.co/WvfGxY79/photo-2026-02-03-20-58-56.jpg",
+      "sizes": "512x512",
+      "type": "image/jpeg"
+    }
+  ]
+}
