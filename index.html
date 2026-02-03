@@ -348,7 +348,7 @@ html, body, div, section, main, ul, li {
 
 <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#f8fafc">
-    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/2964/2964657.png">
+    <link rel="apple-touch-icon" href="https://i.ibb.co/WvfGxY79/photo-2026-02-03-20-58-56.jpg">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="小暗网">
@@ -1754,7 +1754,7 @@ beforeUnmount() {
         methods: {
 // 【新增】显示添加到桌面引导
             showAddToHomeGuide(source = 'user') {
-                // 如果已经是APP模式，不显示
+                // 1. 如果已经是APP模式，提示并退出
                 if (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true) {
                     if(source === 'user') {
                         const Toast = Swal.mixin({ toast: true, position: 'top', showConfirmButton: false, timer: 2000 });
@@ -1763,22 +1763,23 @@ beforeUnmount() {
                     return;
                 }
 
-                // [修改] 升级版美化弹窗 HTML，带头部渐变和更清晰的引导
+                // 定义你的专属 Logo HTML (和顶部导航栏一致)
+                const myLogoHtml = `
+                    <div class="w-20 h-20 rounded-full bg-black flex items-center justify-center text-[#00ff41] shadow-[0_0_20px_rgba(0,255,65,0.4)] border border-[#00ff41]/60 mb-4 animate-pulse">
+                        <i class="ri-spy-fill text-4xl"></i>
+                    </div>
+                `;
+
+                // iOS 引导 HTML (美化版)
                 const iosGuideHtml = `
-                    <div class="relative overflow-hidden">
+                    <div class="relative overflow-hidden pb-2">
                         <div class="absolute top-0 left-0 w-full h-24 bg-gradient-to-r from-blue-600 to-indigo-600 -mt-6"></div>
-                        
                         <div class="relative z-10 flex flex-col items-center pt-8">
-                            <div class="w-20 h-20 bg-white rounded-2xl flex items-center justify-center mb-4 shadow-lg p-1">
-                                <div class="w-full h-full bg-slate-900 rounded-xl flex items-center justify-center border border-slate-100">
-                                    <i class="ri-spy-fill text-4xl text-[#00ff41]"></i>
-                                </div>
-                            </div>
+                            ${myLogoHtml}
+                            <h3 class="text-xl font-black text-slate-800 mb-1">添加到主屏幕</h3>
+                            <p class="text-xs text-slate-500 mb-6 px-4">防止域名丢失，获得原生 APP 体验</p>
                             
-                            <h3 class="text-xl font-black text-slate-800 mb-1">安装到桌面</h3>
-                            <p class="text-xs text-slate-500 mb-6 px-4">获得全屏体验，防止域名丢失，访问更稳定</p>
-                            
-                            <div class="w-full bg-slate-50 rounded-xl p-5 text-left border border-slate-100 space-y-4 shadow-inner">
+                            <div class="w-full bg-slate-50 rounded-xl p-5 text-left border border-slate-100 space-y-4 shadow-inner mx-4">
                                 <div class="flex items-start gap-4">
                                     <div class="w-8 h-8 rounded-full bg-white text-blue-600 border border-blue-100 flex items-center justify-center text-sm font-bold shadow-sm shrink-0">1</div>
                                     <div class="text-sm text-slate-600 leading-snug pt-1">
@@ -1788,7 +1789,7 @@ beforeUnmount() {
                                 <div class="flex items-start gap-4">
                                     <div class="w-8 h-8 rounded-full bg-white text-blue-600 border border-blue-100 flex items-center justify-center text-sm font-bold shadow-sm shrink-0">2</div>
                                     <div class="text-sm text-slate-600 leading-snug pt-1">
-                                        上滑菜单找到并点击 <span class="font-bold text-slate-800 bg-white px-2 py-0.5 rounded border border-slate-200 text-xs shadow-sm">添加到主屏幕</span>
+                                        上滑菜单找到 <span class="font-bold text-slate-800 bg-white px-2 py-0.5 rounded border border-slate-200 text-xs shadow-sm">添加到主屏幕</span>
                                     </div>
                                 </div>
                                 <div class="flex items-start gap-4">
@@ -1802,54 +1803,83 @@ beforeUnmount() {
                     </div>
                 `;
 
-                // [修改] 安卓/PC 引导 HTML
+                // 安卓 引导 HTML (美化版 - 针对 Chrome)
                 const androidGuideHtml = `
-                    <div class="flex flex-col items-center pt-4">
-                        <div class="w-16 h-16 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center mb-4 shadow-lg text-white">
-                            <i class="ri-download-cloud-2-fill text-3xl"></i>
+                    <div class="relative overflow-hidden pb-2">
+                        <div class="absolute top-0 left-0 w-full h-24 bg-gradient-to-r from-emerald-500 to-teal-600 -mt-6"></div>
+                        <div class="relative z-10 flex flex-col items-center pt-8">
+                            ${myLogoHtml}
+                            <h3 class="text-xl font-black text-slate-800 mb-1">安装应用</h3>
+                            <p class="text-xs text-slate-500 mb-6 px-4">获得全屏体验，防止域名丢失，访问更稳定</p>
+
+                            <div class="w-full bg-slate-50 rounded-xl p-5 text-left border border-slate-100 space-y-4 shadow-inner mx-4">
+                                <div class="flex items-start gap-4">
+                                    <div class="w-8 h-8 rounded-full bg-white text-emerald-600 border border-emerald-100 flex items-center justify-center text-sm font-bold shadow-sm shrink-0">1</div>
+                                    <div class="text-sm text-slate-600 leading-snug pt-1">
+                                        点击右上角的 <span class="inline-flex items-center justify-center w-6 h-6 bg-slate-200 rounded mx-1 text-slate-600"><i class="ri-more-2-fill"></i></span> 菜单图标
+                                    </div>
+                                </div>
+                                <div class="flex items-start gap-4">
+                                    <div class="w-8 h-8 rounded-full bg-white text-emerald-600 border border-emerald-100 flex items-center justify-center text-sm font-bold shadow-sm shrink-0">2</div>
+                                    <div class="text-sm text-slate-600 leading-snug pt-1">
+                                        选择 <span class="font-bold text-slate-800 bg-white px-2 py-0.5 rounded border border-slate-200 text-xs shadow-sm"><i class="ri-download-cloud-2-line"></i> 安装应用</span>
+                                    </div>
+                                </div>
+                                <div class="p-2 bg-blue-50 text-blue-600 text-xs rounded-lg text-center border border-blue-100">
+                                    如果无法安装，请使用 Chrome 浏览器访问
+                                </div>
+                            </div>
                         </div>
-                        <h3 class="text-lg font-bold text-slate-800">安装应用</h3>
-                        <p class="text-sm text-slate-500 mt-2 mb-6 text-center px-4">将网站安装到您的设备，像原生APP一样使用。</p>
                     </div>
                 `;
 
-if (this.isIOS) {
-                    // [修改] 针对 iOS 的美化配置
+                // 2. 判断设备弹出不同样式
+                if (this.isIOS) {
                     Swal.fire({
                         html: iosGuideHtml,
                         showConfirmButton: true,
                         confirmButtonText: '我知道了',
-                        // 改成品牌蓝色
-                        confirmButtonColor: '#3b82f6', 
-                        customClass: {
-                            popup: 'rounded-3xl',
-                            content: 'p-0'
-                        },
+                        confirmButtonColor: '#3b82f6',
+                        customClass: { popup: 'rounded-3xl', content: 'p-0' },
                         buttonsStyling: false,
                         didOpen: () => {
-                            // 给按钮添加样式
                             const btn = Swal.getConfirmButton();
-                            // [修改] 这里把 bg-slate-900 改成了 btn-gradient (你网站通用的蓝色渐变)
                             btn.className = 'w-full mt-4 btn-gradient text-white font-bold py-3.5 rounded-xl shadow-lg active:scale-95 transition';
                         }
                     });
                 } else {
+                    // 安卓逻辑：优先尝试自动拉起，不行则显示手动教程
                     Swal.fire({
-                        title: title,
-                        html: `${whyMsg}<p class="text-slate-700 font-medium text-sm">点击下方按钮尝试添加</p>`,
-                        icon: 'info',
+                        html: androidGuideHtml,
+                        showConfirmButton: true,
                         showCancelButton: true,
-                        confirmButtonText: '立即添加',
-                        cancelButtonText: '取消',
-                        confirmButtonColor: '#3b82f6'
+                        confirmButtonText: '立即安装',
+                        cancelButtonText: '我知道了',
+                        confirmButtonColor: '#10b981',
+                        cancelButtonColor: '#64748b',
+                        customClass: { popup: 'rounded-3xl', content: 'p-0' },
+                        buttonsStyling: false,
+                        didOpen: () => {
+                            const btn = Swal.getConfirmButton();
+                            const cancelBtn = Swal.getCancelButton();
+                            btn.className = 'flex-1 bg-gradient-to-r from-emerald-500 to-teal-500 text-white font-bold py-3 rounded-xl shadow-lg active:scale-95 transition mr-2';
+                            cancelBtn.className = 'flex-1 bg-slate-100 text-slate-500 font-bold py-3 rounded-xl hover:bg-slate-200 active:scale-95 transition ml-2';
+                            
+                            // 调整按钮容器布局
+                            const actions = Swal.getActions();
+                            actions.className = 'swal2-actions w-full px-5 pb-5 pt-2 flex gap-2';
+                        }
                     }).then(async (result) => {
                         if (result.isConfirmed) {
+                            // 尝试触发自动安装
                             if (this.deferredPrompt) {
                                 this.deferredPrompt.prompt();
                                 const { outcome } = await this.deferredPrompt.userChoice;
                                 if (outcome === 'accepted') this.deferredPrompt = null;
                             } else {
-                                Swal.fire('提示', '请点击浏览器菜单，选择 "安装应用" 或 "添加到主屏幕"', 'info');
+                                // 如果无法自动触发，提示用户手动操作
+                                const Toast = Swal.mixin({ toast: true, position: 'center', showConfirmButton: false, timer: 3000 });
+                                Toast.fire({ icon: 'info', title: '请按上图指引手动点击菜单安装' });
                             }
                         }
                     });
