@@ -8,12 +8,12 @@
   "description": "便捷、安全的数字交易体验",
   "icons": [
     {
-      "src": "https://i.ibb.co/WvfGxY79/photo-2026-02-03-20-58-56.jpg",
+      "src": "icon.jpg",  
       "sizes": "192x192",
       "type": "image/jpeg"
     },
     {
-      "src": "https://i.ibb.co/WvfGxY79/photo-2026-02-03-20-58-56.jpg",
+      "src": "icon.jpg",
       "sizes": "512x512",
       "type": "image/jpeg"
     }
