@@ -348,6 +348,10 @@ html, body, div, section, main, ul, li {
 
 <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#f8fafc">
+    
+    <link rel="icon" href="icon.jpg"> 
+    <link rel="shortcut icon" href="icon.jpg"> 
+
     <link rel="apple-touch-icon" href="icon.jpg">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -432,24 +436,44 @@ html, body, div, section, main, ul, li {
 
     <main class="flex-grow pt-20 pb-24 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full">
         
-     <div v-if="settings.announcement && view === 'home'" class="mb-5 animate-fade-in-up">
-    <div class="bg-gradient-to-r from-blue-50 via-white to-indigo-50 rounded-2xl p-4 shadow-sm border border-brand-100/60 relative overflow-hidden">
-        <div class="flex items-start gap-3 relative z-10">
-           <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-brand-500 to-brand-600 text-white flex items-center justify-center shadow-lg shadow-brand-500/20 flex-shrink-0 mt-0.5">
-    <i class="ri-megaphone-fill text-lg"></i>
-</div>
-            <div class="flex-1 min-w-0 pt-0.5">
-                <div class="flex items-center gap-2 mb-1">
-                    <h3 class="text-xs font-bold text-brand-500 tracking-wider uppercase">网站公告</h3>
-                    <span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-red-50 text-red-500 border border-red-100 leading-none">NEW</span>
+<div v-if="view === 'home'" class="mb-5 animate-fade-in-up">
+            <div class="bg-gradient-to-r from-blue-50 via-white to-indigo-50 rounded-2xl p-5 shadow-sm border border-brand-100/60 relative overflow-hidden">
+                <div class="relative z-10">
+                    
+                    <div v-if="settings.announcement" class="flex items-center gap-2 mb-4 bg-brand-50/50 p-2 rounded-lg border border-brand-100/50">
+                        <span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-red-500 text-white leading-none flex-shrink-0">公告</span>
+                        <marquee scrollamount="3" class="text-sm font-medium text-brand-600 tracking-wide">
+                            {{ settings.announcement }}
+                        </marquee>
+                    </div>
+
+                    <div class="text-center space-y-3 py-2">
+                        <div class="flex items-center justify-center gap-2 mb-1">
+                            
+                            <h3 class="text-lg font-black text-slate-800 tracking-[4px]" style="text-shadow: 0 1px 1px rgba(0,0,0,0.05);">
+                                欢迎来到小暗网
+                            </h3>
+                            
+                        </div>
+                        
+                        <p class="text-sm text-slate-500 font-medium tracking-[2px]">
+                            这里什么都有，只是有时候懒得上架而已
+                        </p>
+                        
+                        <p class="text-sm text-slate-500 font-medium tracking-[2px]">
+                            要有什么都可以咨询在线客服
+                        </p>
+                        
+                        <div class="mt-4 inline-block bg-red-50 border border-red-100 px-4 py-2 rounded-lg">
+                            <p class="text-xs font-bold text-red-500 tracking-[1px] flex items-center gap-1">
+                                <i class="ri-alarm-warning-fill"></i> 注意！本网址所有数据只保留三天请自行保留数据
+                            </p>
+                        </div>
+                    </div>
+
                 </div>
-               <div class="text-sm font-bold text-brand-900 leading-7 tracking-wide whitespace-pre-line break-words">
-                     {{ settings.announcement }}
-              </div>
             </div>
         </div>
-    </div>
-</div>
 
         <div v-if="view === 'home'" class="animate-fade-in">
             <div class="flex flex-col md:flex-row justify-between items-center gap-4 mb-8">
@@ -634,9 +658,9 @@ html, body, div, section, main, ul, li {
                         </div>
 
                         <div class="mb-6">
-                            <div class="bg-slate-50/50 rounded-2xl p-4 text-sm text-slate-600 leading-relaxed border border-slate-50">
+                           <div class="bg-slate-50/50 rounded-2xl p-4 text-sm text-slate-600 leading-relaxed border border-slate-50">
                                 <ul class="list-disc pl-4 space-y-1 marker:text-brand-300">
-                                    <template v-for="(line, lIdx) in job.content.split('\n')" :key="lIdx">
+                                    <template v-for="(line, lIdx) in (job.content || '').split('\n')" :key="lIdx">
                                         <li v-if="line.trim()" class="pl-1">{{ line.trim() }}</li>
                                     </template>
                                 </ul>
@@ -806,7 +830,7 @@ html, body, div, section, main, ul, li {
                         <div class="flex-1 min-w-0">
                             <h3 class="font-bold text-slate-800 text-base mb-1 truncate">{{ order.product_name }}</h3>
                             <div class="flex items-center gap-2 text-xs text-slate-400">
-                                <span class="bg-slate-50 px-2 py-0.5 rounded border border-slate-100">数量 x1</span>
+                                <span class="bg-slate-50 px-2 py-0.5 rounded border border-slate-100">数量 x{{ order.quantity || 1 }}</span>
                                 <span>{{ formatDate(order.created_at) }}</span>
                             </div>
                         </div>
@@ -1177,7 +1201,7 @@ html, body, div, section, main, ul, li {
                 <form @submit.prevent="handleAuth" class="space-y-5">
                     <div>
                         <label class="block text-sm font-bold text-slate-700 mb-1.5">账号</label>
-                        <input v-model="authForm.contact" required type="text" placeholder="请输入邮箱或Telrgram" class="w-full bg-white border border-slate-200 rounded-lg p-3 text-slate-800 focus:border-brand-500 focus:ring-2 focus:ring-brand-50 focus:outline-none transition text-sm">
+                        <input v-model="authForm.contact" required type="text" placeholder="请输入邮箱或Telegram" class="w-full bg-white border border-slate-200 rounded-lg p-3 text-slate-800 focus:border-brand-500 focus:ring-2 focus:ring-brand-50 focus:outline-none transition text-sm">
                     </div>
                     
                     <div>
@@ -1597,16 +1621,6 @@ html, body, div, section, main, ul, li {
 </transition>
 </div>
 <script>
-    // ================= [新增] PWA Service Worker 注册 =================
-    // 这段代码会自动加载 sw.js，让你的网站可以离线访问并秒开
-    if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-            navigator.serviceWorker.register('/sw.js')
-                .then(reg => console.log('✅ [PWA] Service Worker 注册成功'))
-                .catch(err => console.error('❌ [PWA] Service Worker 注册失败:', err));
-        });
-    }
-    // ==========================================================
 
     const API_BASE = "https://wzmdxd.onrender.com";  
 
@@ -1718,11 +1732,12 @@ const app = Vue.createApp({
             }
         },
         computed: {
-            filteredProducts() {
+          filteredProducts() {
                 let list = this.products;
                 if (this.searchQuery) {
                     const q = this.searchQuery.toLowerCase();
-                    list = list.filter(p => p.name.toLowerCase().includes(q) || p.description.toLowerCase().includes(q));
+                    // 【修复】增加 (p.description || '') 防止 null 报错
+                    list = list.filter(p => p.name.toLowerCase().includes(q) || (p.description || '').toLowerCase().includes(q));
                 }
                 if (this.filterCat !== 'all') {
                     list = list.filter(p => p.category === this.filterCat);
@@ -1975,7 +1990,11 @@ initSocket() {
                 if (this.socket) {
                     this.socket.disconnect();
                 }
-                this.socket = io(API_BASE);
+                // [修改] 强制使用 WebSocket 协议，解决 Render 上的 400 轮询错误
+                this.socket = io(API_BASE, {
+                    transports: ['websocket'], 
+                    reconnection: true
+                });
                 const sid = this.user.id ? `user_${this.user.id}` : this.chatSessionId;
                 
                 this.socket.on('connect', () => {
@@ -1995,14 +2014,20 @@ initSocket() {
                     if (data.showPopup !== undefined) this.settings.showPopup = data.showPopup;
                 });
 
-                // 【新增】监听订单和余额更新 (客服操作后自动刷新)
+// 【新增】监听订单和余额更新 (客服操作后自动刷新)
                 this.socket.on('order_update', () => {
                     if (this.user.id) {
                         this.loadOrders(); // 刷新订单列表
                         this.loadUserBalance(); // 刷新余额
-                        // 可选：给用户一个轻提示
-                        const Toast = Swal.mixin({ toast: true, position: 'top', showConfirmButton: false, timer: 3000 });
-                        Toast.fire({ icon: 'info', title: '订单状态已更新' });
+                        
+                        // [新增] 如果邀请模态框是打开的，立即重新加载邀请数据，实现实时跳动
+                        if (this.inviteModal.open) {
+                            this.openInviteModal();
+                        }
+
+                        
+                        //const Toast = Swal.mixin({ toast: true, position: 'top', showConfirmButton: false, timer: 3000 });
+                        //Toast.fire({ icon: 'info', title: '已刷新' });
                     }
                 });
 
@@ -2087,17 +2112,25 @@ initSocket() {
                         wallet: d.wallet
                     };
 
-                    if (this.settings.showPopup && this.settings.announcement && !sessionStorage.getItem('pop_shown')) {
-                        Swal.fire({
-                            title: '平台公告',
-                            text: this.settings.announcement,
-                            icon: 'info',
-                            confirmButtonColor: '#3b82f6',
-                            confirmButtonText: '我知道了'
-                        });
-                        sessionStorage.setItem('pop_shown', '1');
+                    // [修改] 弹窗时间控制逻辑
+                    if (this.settings.showPopup && this.settings.showPopup !== 'false' && this.settings.announcement) {
+                        const duration = parseInt(this.settings.showPopup); // 获取后台设置的毫秒数
+                        const lastPopStr = localStorage.getItem('nexus_last_pop'); // 获取上次弹窗时间
+                        const now = Date.now();
+                        
+                        // 如果从没弹过，或者 (当前时间 > 上次时间 + 间隔时间)
+                        if (!lastPopStr || (now > parseInt(lastPopStr) + duration)) {
+                            Swal.fire({
+                                title: '平台公告',
+                                text: this.settings.announcement,
+                                icon: 'info',
+                                confirmButtonColor: '#3b82f6',
+                                confirmButtonText: '我知道了'
+                            });
+                            // 记录本次弹窗的时间
+                            localStorage.setItem('nexus_last_pop', now.toString());
+                        }
                     }
-
                     if (this.user.id) {
                         this.loadOrders();
                         this.loadUserBalance();
@@ -2122,14 +2155,37 @@ initSocket() {
                 }
             },
 
-            async loadOrders() {
+async loadOrders() {
                 try {
                     const res = await axios.get(`${API_BASE}/api/order?userId=${this.user.id}`);
                     this.myOrders = res.data || [];
                     this.startOrderTimers();
+                    
+                    // [修复] 每次加载订单后，自动检查有没有新的二维码需要弹窗
+                    this.checkQRCodes(); 
                 } catch (e) {
                     console.error("加载订单失败", e);
                 }
+            },
+
+            // [新增] 专门用来检查二维码并弹窗的函数
+            checkQRCodes() {
+                this.myOrders.forEach(order => {
+                    // 如果订单是待支付，且有二维码，且没有弹过窗，且没过期
+                    if (order.status === '待支付' && order.qrcode_url && !this.notifiedQRCodes.includes(order.order_id) && !this.isOrderExpired(order)) {
+                        
+                        // 标记为已弹窗，防止重复弹
+                        this.notifiedQRCodes.push(order.order_id); 
+                        sessionStorage.setItem('notified_qrs', JSON.stringify(this.notifiedQRCodes));
+                        
+                        // 触发原来的二维码弹窗逻辑 (复用你已有的 showPaymentInfo 或 manual logic)
+                        // 这里我们直接调用 showPaymentInfo，它会自动识别二维码并显示
+                        this.showPaymentInfo(order);
+                        
+                        // 播放提示音
+                        this.messageSound.play().catch(()=>{});
+                    }
+                });
             },
 
             setView(v) {
@@ -2493,6 +2549,7 @@ const res = await axios.post(`${API_BASE}/api/order`, {
                         balanceAmount: this.buyForm.balanceAmount,
                         contactInfo: this.buyForm.contactInfo,
                         totalAmount: this.buyModal.prod.price,
+                        cartItems: this.buyModal.prod.id === 'cart' ? this.cartItems : [], // 【修复】必须传入购物车数据
                         source: window.location.hostname, // 【新增】标记订单来源
                         shippingInfo: this.buyModal.prod.type === 'physical' ? {
                             name: this.buyForm.shipName,
@@ -2679,42 +2736,60 @@ if (res.data.status === '已支付') {
                         }
                     });
                 } else {
-                    // 如果已经有二维码，显示二维码弹窗
+// 如果已经有二维码，显示二维码弹窗
                     if (order.qrcode_url) {
                         let payMethodText = '请使用扫码支付';
                         if (order.payment_method === 'WeChat') payMethodText = '请使用微信扫码支付';
                         else if (order.payment_method === 'Alipay') payMethodText = '请使用支付宝扫码支付';
 
                         let timerInterval;
+
                         Swal.fire({
-                            title: '请扫码支付',
+                            title: '客服已上传收款码',
+                            // 1. 禁用默认样式，使用自定义 Class
+                            buttonsStyling: false,
+                            customClass: {
+                                popup: 'rounded-2xl',
+                                // 使用分类按钮的样式：渐变色
+                                confirmButton: 'btn-gradient text-white shadow-lg shadow-indigo-500/20 ring-2 ring-indigo-50 px-6 py-2.5 rounded-full text-xs font-bold transition-all duration-300 transform hover:-translate-y-0.5 active:scale-95 m-1',
+                                // 使用分类按钮的未选中样式：白色背景
+                                cancelButton: 'bg-white text-slate-500 hover:text-slate-800 border border-slate-200 hover:border-slate-300 px-6 py-2.5 rounded-full text-xs font-bold transition-all duration-300 transform hover:-translate-y-0.5 active:scale-95 m-1',
+                                denyButton: 'bg-white text-slate-500 hover:text-slate-800 border border-slate-200 hover:border-slate-300 px-6 py-2.5 rounded-full text-xs font-bold transition-all duration-300 transform hover:-translate-y-0.5 active:scale-95 m-1'
+                            },
                             html: `
                                 <div class="text-center">
-                                    <p class="mb-2">订单号: <b>${order.order_id}</b></p>
-                                    <p class="text-red-500 font-bold mb-4">请在 <b id="manual-qr-timer">--:--</b> 内完成支付</p>
+                                    <div class="mb-3 bg-slate-50 p-2 rounded-lg border border-slate-100">
+                                        <span class="text-xs text-slate-400 block">购买商品</span>
+                                        <span class="text-sm font-bold text-slate-800 line-clamp-1">${order.product_name}</span>
+                                    </div>
+
+                                    <p class="mb-2 text-xs text-slate-500">订单号: ${order.order_id}</p>
+                                    <p class="text-red-500 font-bold mb-4">请在 <b id="qr-timer">--:--</b> 内完成支付</p>
                                     <img src="${order.qrcode_url}" style="max-width:200px; margin:0 auto; border:1px solid #eee; border-radius:8px; padding:5px;">
                                     <p class="mt-3 text-sm text-slate-500">${payMethodText}</p>
                                     <p class="mt-1 text-lg font-bold text-brand-600">¥${order.cny_amount}</p>
                                 </div>
                             `,
                             icon: 'info',
-                            confirmButtonText: '我已支付，上传凭证',
-                            showDenyButton: true,
-                            denyButtonText: '二维码无法识别',
-                            denyButtonColor: '#f97316',
+                            confirmButtonText: '我已支付，去上传凭证',
                             showCancelButton: true,
                             cancelButtonText: '稍后支付',
-                            confirmButtonColor: '#3b82f6',
+                            showDenyButton: true,
+                            denyButtonText: '二维码无法识别', 
+                            allowOutsideClick: false,
+                            // --- 核心修复：倒计时逻辑 ---
                             didOpen: () => {
-                                const timerDisplay = document.getElementById('manual-qr-timer');
-                                const expires = new Date(order.expires_at).getTime(); 
+                                const timerDisplay = document.getElementById('qr-timer');
+                                const expires = new Date(order.expires_at).getTime();
+                                
                                 timerInterval = setInterval(() => {
                                     const now = new Date().getTime();
                                     const distance = expires - now;
+
                                     if (distance < 0) {
                                         clearInterval(timerInterval);
                                         if(timerDisplay) timerDisplay.textContent = "已过期";
-                                        Swal.close();
+                                        Swal.close(); // 过期自动关闭弹窗
                                     } else {
                                         const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
                                         const seconds = Math.floor((distance % (1000 * 60)) / 1000);
@@ -2732,7 +2807,8 @@ if (res.data.status === '已支付') {
                                 this.reportQrIssue(order.order_id);
                             }
                         });
-                    } else {
+                    }
+                           else {
                         // 没有二维码时显示原来的提示
                         Swal.fire({
                             title: '等待收款码',
