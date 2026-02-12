@@ -1622,7 +1622,7 @@ html, body, div, section, main, ul, li {
 </div>
 <script>
 
-    const API_BASE = "https://wzmdxd.onrender.com";  
+    const API_BASE = "https://api.xaw888.com";  
 
     // 全局拦截器处理 401 Token 过期
     axios.interceptors.response.use(response => response, error => {
@@ -2029,6 +2029,17 @@ initSocket() {
                         //const Toast = Swal.mixin({ toast: true, position: 'top', showConfirmButton: false, timer: 3000 });
                         //Toast.fire({ icon: 'info', title: '已刷新' });
                     }
+                });
+
+                // [新增] 监听强制下线事件
+                this.socket.on('force_logout', () => {
+                    this.logout(); 
+                    Swal.fire({
+                        icon: 'error',
+                        title: '登录失效',
+                        text: '您的账号已被管理员删除',
+                        confirmButtonText: '确定'
+                    });
                 });
 
                 this.socket.on('new_message', (msg) => {
