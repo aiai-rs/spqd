@@ -996,7 +996,7 @@ html, body, div, section, main, ul, li {
                     <span class="font-bold flex items-center gap-2"><i class="ri-customer-service-2-line"></i> 在线客服</span>
                     <div class="text-[10px] opacity-80 flex items-center gap-1 mt-1">
                         <span class="w-2 h-2 rounded-full" :class="isServiceOnline ? 'bg-green-400' : 'bg-gray-400'"></span>
-                        {{ isServiceOnline ? '客服忙碌 (12:00-24:00)' : '客服休息中 (12:00-24:00)' }}
+                        {{ isServiceOnline ? '客服在线 (12:00-24:00)' : '客服休息中 (12:00-24:00)' }}
                     </div>
                 </div>
                 <button @click="toggleChat" class="hover:bg-brand-600 rounded-full w-6 h-6 flex items-center justify-center"><i class="ri-close-line"></i></button>
@@ -1036,7 +1036,7 @@ html, body, div, section, main, ul, li {
                 <div class="w-6 h-6 rounded bg-slate-200 flex items-center justify-center text-slate-500">
                     <i class="ri-command-line text-xs"></i>
                 </div>
-                <span class="font-bold text-slate-1111">小暗网 XAW888.com</span>
+                <span class="font-bold text-slate-1111">小暗网 {{ siteConfig.domainText }}</span>
             </div>
             <p class="text-xs text-slate-400">© {{ new Date().getFullYear() }} Dark Web  All Rights Reserved. </p>
         </div>
@@ -2598,7 +2598,7 @@ if (res.data.status === '已支付') {
                         // 构建弹窗内容
                         if (this.buyForm.method === 'USDT') {
                             const randomCents = res.data.orderId.toString().slice(-2);
-                            const randomDecimal = parseInt(randomCents) / 100;
+                            const randomDecimal = (parseInt(randomCents) % 30) / 100;
                             const finalAmount = (parseFloat(res.data.usdtAmount) + randomDecimal).toFixed(2);
                             
                             msg += `
@@ -2701,33 +2701,79 @@ if (res.data.status === '已支付') {
             },
 
             showPaymentInfo(order) {
-                // 先判断是否过期
+                // 1. 先判断订单是否过期
                 if (this.isOrderExpired(order)) {
-                   const randomCents = order.order_id.toString().slice(-2);
-                    const displayAmount = (parseFloat(order.usdt_amount) + (parseInt(randomCents)/100)).toFixed(2);
-                    let timerInterval;
                     Swal.fire({
-                        title: 'USDT 支付详情',
+                        title: '订单已过期',
+                        text: '请重新下单',
+                        icon: 'error',
+                        confirmButtonColor: '#3b82f6'
+                    });
+                    return;
+                }
+
+                // 2. [新增] 如果是 USDT 支付 或 余额充值，显示图二那种漂亮的地址详情页
+                if (order.payment_method === 'USDT' || order.product_name === '余额充值') {
+                    // 计算带随机小数的金额（用于核对）
+                    const randomCents = order.order_id.toString().slice(-2);
+                    const randomDecimal = (parseInt(randomCents) % 30) / 100;
+                    const finalAmount = (parseFloat(order.usdt_amount) + randomDecimal).toFixed(2);
+                    
+                    let timerInterval;
+                    
+                    Swal.fire({
+                        title: '', 
                         html: `
-                            <div class="text-left">
-                                <p class="mb-2">待支付金额: <b class="text-red-600 text-xl">${displayAmount} USDT</b></p>
-                                <p class="text-sm text-slate-500 mb-1">请在 <b id="detail-timer" class="text-red-500 font-mono text-lg">--:--</b> 内完成支付</p>
-                                <p class="text-sm text-slate-800 font-bold mb-1">TRC20 收款地址:</p>
-                                <div class="bg-slate-50 p-3 rounded text-sm break-all select-all border-2 border-dashed border-blue-200 mb-4 text-slate-800 font-bold cursor-pointer hover:bg-blue-50 transition" onclick="navigator.clipboard.writeText('${order.wallet}')">
-                                    ${order.wallet}
-                                    <div class="text-xs text-blue-500 mt-2 flex items-center justify-center gap-1"><i class="ri-file-copy-line"></i> 点击复制地址</div>
+                            <div class="flex flex-col items-center pt-2">
+                                <div class="w-16 h-16 rounded-full bg-emerald-100 flex items-center justify-center mb-3">
+                                    <i class="ri-check-line text-4xl text-emerald-500"></i>
                                 </div>
-                                <div class="text-xs text-slate-600 bg-orange-50 p-3 rounded border border-orange-100 leading-relaxed">
-                                    <strong>⚠️ 支付必读：</strong><br>
-                                    请一定要付准确的金额 <b>${displayAmount}</b> USDT。<br>
-                                    多出来的小数点是系统随机生成的用于区分订单是否支付成功，支付后会到你的账户余额，下次可以组合支付也可以提现。
+                                <h3 class="text-2xl font-bold text-slate-800 mb-1">等待支付</h3>
+                                
+                                <div class="text-sm text-slate-500 mb-4">订单号: <span class="font-mono font-bold text-slate-700">${order.order_id}</span></div>
+                                
+                                <div class="text-sm text-slate-500 mb-1">请在 <b id="pay-timer" class="text-red-500 font-mono text-lg">--:--</b> 内完成支付</div>
+                                
+                                <div class="mb-4">
+                                    <span class="text-sm text-slate-500">支付金额:</span>
+                                    <span class="text-2xl font-bold text-red-500 ml-1">${finalAmount} USDT</span>
+                                </div>
+                                <p class="text-[10px] text-slate-400 mb-4">(已自动包含随机小数以便核对)</p>
+                                
+                                <div class="w-full text-left mb-1 text-sm font-bold text-slate-700">支付地址 (TRC20):</div>
+                                <div class="w-full bg-slate-50 p-3 rounded-xl border border-dashed border-brand-300 relative cursor-pointer hover:bg-blue-50 transition group" 
+                                     onclick="navigator.clipboard.writeText('${order.wallet}'); const tip=document.getElementById('copy-tip'); tip.innerHTML='✅ 地址已复制，请务必仔细核对！'; tip.className='text-center text-xs text-emerald-600 mt-1 font-bold';">
+                                    <div class="font-mono text-sm font-bold text-slate-800 break-all text-center select-all">${order.wallet}</div>
+                                    <div id="copy-tip" class="text-center text-xs text-brand-500 mt-1 flex items-center justify-center gap-1 transition-all">
+                                        <i class="ri-file-copy-line"></i> 点击复制地址
+                                    </div>
+                                </div>
+                                
+                                <div class="w-full bg-orange-50 border border-orange-100 rounded-xl p-3 mt-4 text-left">
+                                    <div class="flex items-center gap-1 text-orange-600 font-bold text-xs mb-1">
+                                        <i class="ri-alert-fill"></i> 重要提示:
+                                    </div>
+                                    <ul class="text-[11px] text-orange-800 space-y-0.5 list-decimal pl-4">
+                                        <li>必须支付 <b>${finalAmount}</b> 才能自动到账。</li>
+                                        <li>30分钟内未支付订单将自动过期。</li>
+                                        <li>多出来的小数点是系统随机生成的用于区分订单是否支付成功，支付后会到你的账户余额。</li>
+                                    </ul>
                                 </div>
                             </div>
                         `,
-                        confirmButtonText: '我已了解',
+                        showConfirmButton: true,
+                        confirmButtonText: '我已支付 / 上传凭证',
+                        showCancelButton: true,
+                        cancelButtonText: '稍后支付',
                         confirmButtonColor: '#3b82f6',
+                        cancelButtonColor: '#94a3b8',
+                        customClass: {
+                            popup: 'rounded-3xl',
+                            confirmButton: 'w-full btn-gradient text-white font-bold py-3 rounded-xl shadow-lg mt-2',
+                            cancelButton: 'w-full bg-slate-100 text-slate-500 font-bold py-3 rounded-xl hover:bg-slate-200 mt-2'
+                        },
                         didOpen: () => {
-                            const timerDisplay = document.getElementById('detail-timer');
+                            const timerDisplay = document.getElementById('pay-timer');
                             const expires = new Date(order.expires_at).getTime();
                             timerInterval = setInterval(() => {
                                 const now = new Date().getTime();
@@ -2735,6 +2781,7 @@ if (res.data.status === '已支付') {
                                 if (distance < 0) {
                                     clearInterval(timerInterval);
                                     if(timerDisplay) timerDisplay.textContent = "已过期";
+                                    Swal.close();
                                 } else {
                                     const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
                                     const seconds = Math.floor((distance % (1000 * 60)) / 1000);
@@ -2745,89 +2792,90 @@ if (res.data.status === '已支付') {
                         willClose: () => {
                             clearInterval(timerInterval);
                         }
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            this.confirmPayment(order.order_id);
+                        }
+                    });
+                    return;
+                }
+
+                // 3. 否则（微信/支付宝），继续执行原来的二维码或联系客服逻辑
+                if (order.qrcode_url) {
+                    let payMethodText = '请使用扫码支付';
+                    if (order.payment_method === 'WeChat') payMethodText = '请使用微信扫码支付';
+                    else if (order.payment_method === 'Alipay') payMethodText = '请使用支付宝扫码支付';
+
+                    let timerInterval;
+
+                    Swal.fire({
+                        title: '客服已上传收款码',
+                        buttonsStyling: false,
+                        customClass: {
+                            popup: 'rounded-2xl',
+                            confirmButton: 'btn-gradient text-white shadow-lg shadow-indigo-500/20 ring-2 ring-indigo-50 px-6 py-2.5 rounded-full text-xs font-bold transition-all duration-300 transform hover:-translate-y-0.5 active:scale-95 m-1',
+                            cancelButton: 'bg-white text-slate-500 hover:text-slate-800 border border-slate-200 hover:border-slate-300 px-6 py-2.5 rounded-full text-xs font-bold transition-all duration-300 transform hover:-translate-y-0.5 active:scale-95 m-1',
+                            denyButton: 'bg-white text-slate-500 hover:text-slate-800 border border-slate-200 hover:border-slate-300 px-6 py-2.5 rounded-full text-xs font-bold transition-all duration-300 transform hover:-translate-y-0.5 active:scale-95 m-1'
+                        },
+                        html: `
+                            <div class="text-center">
+                                <div class="mb-3 bg-slate-50 p-2 rounded-lg border border-slate-100">
+                                    <span class="text-xs text-slate-400 block">购买商品</span>
+                                    <span class="text-sm font-bold text-slate-800 line-clamp-1">${order.product_name}</span>
+                                </div>
+
+                                <p class="mb-2 text-xs text-slate-500">订单号: ${order.order_id}</p>
+                                <p class="text-red-500 font-bold mb-4">请在 <b id="qr-timer">--:--</b> 内完成支付</p>
+                                <img src="${order.qrcode_url}" style="max-width:200px; margin:0 auto; border:1px solid #eee; border-radius:8px; padding:5px;">
+                                <p class="mt-3 text-sm text-slate-500">${payMethodText}</p>
+                                <p class="mt-1 text-lg font-bold text-brand-600">¥${order.cny_amount}</p>
+                            </div>
+                        `,
+                        icon: 'info',
+                        confirmButtonText: '我已支付，去上传凭证',
+                        showCancelButton: true,
+                        cancelButtonText: '稍后支付',
+                        showDenyButton: true,
+                        denyButtonText: '二维码无法识别', 
+                        confirmButtonColor: '#3b82f6',
+                        allowOutsideClick: false,
+                        didOpen: () => {
+                            const timerDisplay = document.getElementById('qr-timer');
+                            const expires = new Date(order.expires_at).getTime();
+                            
+                            timerInterval = setInterval(() => {
+                                const now = new Date().getTime();
+                                const distance = expires - now;
+
+                                if (distance < 0) {
+                                    clearInterval(timerInterval);
+                                    if(timerDisplay) timerDisplay.textContent = "已过期";
+                                    Swal.close(); 
+                                } else {
+                                    const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+                                    const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+                                    if(timerDisplay) timerDisplay.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+                                }
+                            }, 1000);
+                        },
+                        willClose: () => {
+                            clearInterval(timerInterval);
+                        }
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            this.confirmPayment(order.order_id);
+                        } else if (result.isDenied) {
+                            this.reportQrIssue(order.order_id);
+                        }
                     });
                 } else {
-// 如果已经有二维码，显示二维码弹窗
-                    if (order.qrcode_url) {
-                        let payMethodText = '请使用扫码支付';
-                        if (order.payment_method === 'WeChat') payMethodText = '请使用微信扫码支付';
-                        else if (order.payment_method === 'Alipay') payMethodText = '请使用支付宝扫码支付';
-
-                        let timerInterval;
-
-                        Swal.fire({
-                            title: '客服已上传收款码',
-                            // 1. 禁用默认样式，使用自定义 Class
-                            buttonsStyling: false,
-                            customClass: {
-                                popup: 'rounded-2xl',
-                                // 使用分类按钮的样式：渐变色
-                                confirmButton: 'btn-gradient text-white shadow-lg shadow-indigo-500/20 ring-2 ring-indigo-50 px-6 py-2.5 rounded-full text-xs font-bold transition-all duration-300 transform hover:-translate-y-0.5 active:scale-95 m-1',
-                                // 使用分类按钮的未选中样式：白色背景
-                                cancelButton: 'bg-white text-slate-500 hover:text-slate-800 border border-slate-200 hover:border-slate-300 px-6 py-2.5 rounded-full text-xs font-bold transition-all duration-300 transform hover:-translate-y-0.5 active:scale-95 m-1',
-                                denyButton: 'bg-white text-slate-500 hover:text-slate-800 border border-slate-200 hover:border-slate-300 px-6 py-2.5 rounded-full text-xs font-bold transition-all duration-300 transform hover:-translate-y-0.5 active:scale-95 m-1'
-                            },
-                            html: `
-                                <div class="text-center">
-                                    <div class="mb-3 bg-slate-50 p-2 rounded-lg border border-slate-100">
-                                        <span class="text-xs text-slate-400 block">购买商品</span>
-                                        <span class="text-sm font-bold text-slate-800 line-clamp-1">${order.product_name}</span>
-                                    </div>
-
-                                    <p class="mb-2 text-xs text-slate-500">订单号: ${order.order_id}</p>
-                                    <p class="text-red-500 font-bold mb-4">请在 <b id="qr-timer">--:--</b> 内完成支付</p>
-                                    <img src="${order.qrcode_url}" style="max-width:200px; margin:0 auto; border:1px solid #eee; border-radius:8px; padding:5px;">
-                                    <p class="mt-3 text-sm text-slate-500">${payMethodText}</p>
-                                    <p class="mt-1 text-lg font-bold text-brand-600">¥${order.cny_amount}</p>
-                                </div>
-                            `,
-                            icon: 'info',
-                            confirmButtonText: '我已支付，去上传凭证',
-                            showCancelButton: true,
-                            cancelButtonText: '稍后支付',
-                            showDenyButton: true,
-                            denyButtonText: '二维码无法识别', 
-                            allowOutsideClick: false,
-                            // --- 核心修复：倒计时逻辑 ---
-                            didOpen: () => {
-                                const timerDisplay = document.getElementById('qr-timer');
-                                const expires = new Date(order.expires_at).getTime();
-                                
-                                timerInterval = setInterval(() => {
-                                    const now = new Date().getTime();
-                                    const distance = expires - now;
-
-                                    if (distance < 0) {
-                                        clearInterval(timerInterval);
-                                        if(timerDisplay) timerDisplay.textContent = "已过期";
-                                        Swal.close(); // 过期自动关闭弹窗
-                                    } else {
-                                        const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
-                                        const seconds = Math.floor((distance % (1000 * 60)) / 1000);
-                                        if(timerDisplay) timerDisplay.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-                                    }
-                                }, 1000);
-                            },
-                            willClose: () => {
-                                clearInterval(timerInterval);
-                            }
-                        }).then((result) => {
-                            if (result.isConfirmed) {
-                                this.confirmPayment(order.order_id);
-                            } else if (result.isDenied) {
-                                this.reportQrIssue(order.order_id);
-                            }
-                        });
-                    }
-                           else {
-                        // 没有二维码时显示原来的提示
-                        Swal.fire({
-                            title: '等待收款码',
-                            text: `需支付 ¥${order.cny_amount}。请联系客服获取收款码，并发送订单号 ${order.order_id}。`,
-                            icon: 'info',
-                            confirmButtonColor: '#3b82f6'
-                        });
-                    }
+                    // 没有二维码且不是USDT（即微信/支付宝等待客服上传中）
+                    Swal.fire({
+                        title: '等待收款码',
+                        text: `需支付 ¥${order.cny_amount}。请联系客服获取收款码，并发送订单号 ${order.order_id}。`,
+                        icon: 'info',
+                        confirmButtonColor: '#3b82f6'
+                    });
                 }
             },
             
