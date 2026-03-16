@@ -513,7 +513,7 @@ html, body, div, section, main, ul, li {
             
             <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 product-grid">
                 <div v-for="prod in filteredProducts" :key="prod.id" @click="openProductDetail(prod)" class="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-tech-hover transition-all duration-300 group cursor-pointer border border-slate-100 flex flex-col h-full relative">
-                    <div v-if="prod.is_pinned" class="absolute top-3 right-3 z-10 bg-gradient-to-r from-yellow-400 to-orange-400 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-md">HOT</div>
+                    <div v-if="prod.is_pinned" class="absolute top-3 right-3 z-10 bg-gradient-to-r from-yellow-400 to-orange-400 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-md">置顶</div>
                     
                     <div class="aspect-[4/3] bg-slate-100 relative overflow-hidden">
                         <img v-if="getImgList(prod).length > 0" :src="getImgList(prod)[0]" class="w-full h-full object-cover group-hover:scale-110 transition duration-700" @error="handleImageError">
@@ -1160,7 +1160,7 @@ html, body, div, section, main, ul, li {
                             <div>
                                 <h4 class="font-bold text-slate-800 text-sm">2. 获得 5% 佣金</h4>
                                 <p class="text-xs text-slate-500 mt-1 leading-relaxed">
-                                    当您的好友进行充值或消费时，您将直接获得 5% 的现金返利到余额。可提现可购物
+                                    当您的好友进行消费时，您将直接获得 5% 的现金返利到余额。可提现可购物
                                 </p>
                             </div>
                         </div>
@@ -2588,11 +2588,11 @@ const res = await axios.post(`${API_BASE}/api/order`, {
                     if (res.data.success) {
                         this.buyModal.open = false;
 if (res.data.status === '已支付') {
-                            // [修改] 这里的 800 改成 600000 (10分钟)
+                            
                             if (!window.matchMedia('(display-mode: standalone)').matches && !window.navigator.standalone) {
                                 setTimeout(() => {
                                     this.showAddToHomeGuide('purchase'); 
-                                }, 600000);
+                                }, 180000);
                             }
 
                             Swal.fire({
@@ -3398,7 +3398,7 @@ async pollUpdates() {
                                     // [修改] 设置延迟时间：10分钟 = 600000 毫秒
                                     setTimeout(() => {
                                         this.showAddToHomeGuide('purchase');
-                                    }, 600000); 
+                                    }, 180000); 
                                 }
                                 break; // 只弹一次，避免多个订单同时到账弹窗重叠
                             }
