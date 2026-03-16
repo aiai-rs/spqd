@@ -1732,18 +1732,33 @@ const app = Vue.createApp({
             }
         },
         computed: {
-          filteredProducts() {
-                let list = this.products;
-                if (this.searchQuery) {
-                    const q = this.searchQuery.toLowerCase();
-                    // 【修复】增加 (p.description || '') 防止 null 报错
-                    list = list.filter(p => p.name.toLowerCase().includes(q) || (p.description || '').toLowerCase().includes(q));
-                }
-                if (this.filterCat !== 'all') {
-                    list = list.filter(p => p.category === this.filterCat);
-                }
-                return list;
-            },
+          // 【修改后】
+filteredProducts() {
+    // 1. 先进行过滤（搜索和分类）
+    let list = this.products.filter(p => {
+        const matchesSearch = !this.searchQuery || 
+            p.name.toLowerCase().includes(this.searchQuery.toLowerCase()) || 
+            (p.description || '').toLowerCase().includes(this.searchQuery.toLowerCase());
+        const matchesCat = this.filterCat === 'all' || p.category === this.filterCat;
+        return matchesSearch && matchesCat;
+    });
+
+    // 2. 执行核心排序逻辑
+    return list.sort((a, b) => {
+        // 第一层排序：置顶逻辑 (is_pinned)
+        // b.is_pinned 如果是 1，a.is_pinned 是 0，则 b 排在 a 前面
+        const pinA = a.is_pinned ? 1 : 0;
+        const pinB = b.is_pinned ? 1 : 0;
+        
+        if (pinA !== pinB) {
+            return pinB - pinA; 
+        }
+
+        // 第二层排序：时间/ID顺序 (最新上架在前)
+        // 如果置顶状态相同，则比较 ID。b.id - a.id 表示 ID 越大（越晚生上架）的越靠前
+        return b.id - a.id; 
+    });
+},
             currentProdImgs() {
                 return this.getImgList(this.productDetailModal.prod);
             },
