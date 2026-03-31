@@ -828,9 +828,12 @@ html, body, div, section, main, ul, li {
                          <div v-else class="w-full h-full flex items-center justify-center text-slate-300"><i class="ri-shopping-bag-3-line text-2xl"></i></div>
                     </div>
                         <div class="flex-1 min-w-0">
-                            <h3 class="font-bold text-slate-800 text-base mb-1 truncate">{{ order.product_name }}</h3>
+                            <h3 class="font-bold text-slate-800 text-base mb-1 truncate">{{ 
+order.product_name }}</h3>
+                            <div v-if="order.variant_name" class="text-xs font-bold text-brand-600 mb-1">{{ order.variant_name }}</div>
                             <div class="flex items-center gap-2 text-xs text-slate-400">
-                                <span class="bg-slate-50 px-2 py-0.5 rounded border border-slate-100">数量 x{{ order.quantity || 1 }}</span>
+                                <span class="bg-slate-50 px-2 py-0.5 rounded border border-slate-100">数量 x{{ order.quantity ||
+1 }}</span>
                                 <span>{{ formatDate(order.created_at) }}</span>
                             </div>
                         </div>
@@ -929,8 +932,10 @@ html, body, div, section, main, ul, li {
                         </div>
                         <div class="flex-1">
                             <h3 class="font-bold text-slate-800 mb-1">{{ item.name }}</h3>
+                            <div v-if="item.variant_name" class="text-xs font-bold text-brand-600 mb-1">{{ item.variant_name }}</div>
                             <p class="text-sm text-slate-500 mb-2">{{ item.description.substring(0, 50) }}...</p>
-                            <div class="flex items-center justify-between">
+                            <div 
+class="flex items-center justify-between">
                                 <div class="text-lg font-bold text-brand-600">{{ item.price }} USDT</div>
                                 <div class="flex items-center gap-2">
                                     <button @click="updateCartQuantity(item, -1)" class="w-8 h-8 rounded-full bg-slate-100 text-slate-600 hover:bg-slate-200 transition">
@@ -1074,11 +1079,21 @@ html, body, div, section, main, ul, li {
                     
                     <div class="bg-slate-50 p-4 rounded-xl mb-6">
                         <div class="text-3xl font-bold text-brand-600 font-mono">
-                            {{ parseFloat(productDetailModal.prod.price || 0) }} 
-                            <span class="text-sm text-slate-500 font-sans font-normal">USDT</span>
+                            {{ selectedVariant ? parseFloat(selectedVariant.price || 0) : parseFloat(productDetailModal.prod.price || 0) }} 
+  
+                           <span class="text-sm text-slate-500 font-sans font-normal">USDT</span>
                         </div>
-                        <div class="text-sm text-slate-400 mt-1">≈ ¥{{ (productDetailModal.prod.price * settings.rate).toFixed(2) }} (汇率: {{settings.rate}})</div>
-                    </div>
+                        <div class="text-sm text-slate-400 mt-1">≈ ¥{{ ((selectedVariant ? selectedVariant.price : productDetailModal.prod.price) * settings.rate).toFixed(2) }} (汇率: {{settings.rate}})</div>
+            
+         </div>
+         <div v-if="getVariants(productDetailModal.prod).length > 0" class="mb-6">
+             <h4 class="text-sm font-bold text-slate-800 mb-2">选择规格</h4>
+             <div class="flex flex-wrap gap-2">
+                 <div v-for="v in getVariants(productDetailModal.prod)" :key="v.name" @click="selectedVariant = v" :class="selectedVariant && selectedVariant.name === v.name ? 'border-brand-500 bg-brand-50 text-brand-600' : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300'" class="border rounded-lg px-4 py-2 cursor-pointer transition text-sm font-bold">
+                     {{ v.name }}
+                 </div>
+             </div>
+         </div>
                   
 
                     <div class="prose prose-sm text-slate-600 mb-8 flex-grow">
@@ -1684,6 +1699,7 @@ const app = Vue.createApp({
                 // Product Detail
                 productDetailModal: { open: false, prod: {} },
                 currentImgIndex: 0,
+                selectedVariant: null,
 
                 // Chat
                 chatOpen: false,
@@ -2243,9 +2259,16 @@ checkLoginAndGo(target) {
             openProductDetail(prod) {
                 // [新增] 写入历史记录，防止点返回键直接退出网站
                 history.pushState({ modal: 'product' }, null, '');
-                this.productDetailModal.prod = prod;
+this.productDetailModal.prod = prod;
                 this.currentImgIndex = 0;
+                this.selectedVariant = null;
+                const variants = this.getVariants(prod);
+                if(variants.length > 0) this.selectedVariant = variants[0];
                 this.productDetailModal.open = true;
+            },
+            getVariants(prod) {
+                if(!prod || !prod.variants) return [];
+                try { return typeof prod.variants === 'string' ? JSON.parse(prod.variants) : prod.variants; } catch(e) { return []; }
             },
             
             getImgList(prod) {
@@ -2505,12 +2528,16 @@ async handleAuth() {
                 });
             },
 
-            // 购买逻辑
+           // 购买逻辑
             openBuyModal(prod) {
-                this.productDetailModal.open = false; 
-                if (!this.user.id) return this.openAuth('login');
+                this.productDetailModal.open = false;
+if (!this.user.id) return this.openAuth('login');
                 history.pushState({ modal: 'buy' }, null, '');
-                this.buyModal.prod = prod;
+                this.buyModal.prod = JSON.parse(JSON.stringify(prod));
+                if(this.selectedVariant) {
+                    this.buyModal.prod.price = this.selectedVariant.price;
+                    this.buyModal.prod.variant_name = this.selectedVariant.name;
+                }
                 this.buyModal.open = true;
                 this.buyForm = { 
                     method: 'USDT', 
@@ -2570,12 +2597,16 @@ this.orderSubmitting = true;
 const res = await axios.post(`${API_BASE}/api/order`, {
                         userId: this.user.id,
                         productId: this.buyModal.prod.id,
+                        variantName: this.buyModal.prod.variant_name || '',
+                        variantPrice: this.buyModal.prod.price,
                         paymentMethod: this.buyForm.method,
-                        useBalance: this.buyForm.useBalance,
+                   
+      useBalance: this.buyForm.useBalance,
                         balanceAmount: this.buyForm.balanceAmount,
                         contactInfo: this.buyForm.contactInfo,
                         totalAmount: this.buyModal.prod.price,
-                        cartItems: this.buyModal.prod.id === 'cart' ? this.cartItems : [], // 【修复】必须传入购物车数据
+                   
+      cartItems: this.buyModal.prod.id === 'cart' ? this.cartItems : [], // 【修复】必须传入购物车数据
                         source: window.location.hostname, // 【新增】标记订单来源
                         shippingInfo: this.buyModal.prod.type === 'physical' ? {
                             name: this.buyForm.shipName,
@@ -3145,17 +3176,22 @@ if (res.data.status === '已支付') {
                 } catch(e) { Swal.fire('错误', '提交失败', 'error'); }
             },
             
-            // 购物车功能
+           // 购物车功能
             addToCart(prod) {
-                const existingItem = this.cartItems.find(item => item.id === prod.id);
-                if (existingItem) {
+                let cartProd = JSON.parse(JSON.stringify(prod));
+                if(this.selectedVariant) {
+                    cartProd.price = this.selectedVariant.price;
+                    cartProd.variant_name = this.selectedVariant.name;
+                }
+                const existingItem = this.cartItems.find(item => item.id === cartProd.id && item.variant_name === cartProd.variant_name);
+if (existingItem) {
                     existingItem.quantity = (existingItem.quantity || 1) + 1;
-                } else {
+} else {
                     this.cartItems.push({
-                        ...prod,
+                        ...cartProd,
                         quantity: 1
                     });
-                }
+}
                 localStorage.setItem('nexus_cart', JSON.stringify(this.cartItems));
                 
                 Swal.fire({
@@ -3206,11 +3242,9 @@ if (res.data.status === '已支付') {
             
             checkoutCart() {
                 if (this.cartItems.length === 0) return;
-                
-                const hasPhysical = this.cartItems.some(item => item.type === 'physical');
+const hasPhysical = this.cartItems.some(item => item.type === 'physical');
                 const totalAmount = this.cartTotal;
-                
-                const itemNames = this.cartItems.map(item => `${item.name} x${item.quantity||1}`).join(' | ');
+const itemNames = this.cartItems.map(item => `${item.name}${item.variant_name ? ` (${item.variant_name})` : ''} x${item.quantity||1}`).join(' | ');
 
                 this.buyModal.prod = {
                     id: 'cart',
