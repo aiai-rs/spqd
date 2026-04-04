@@ -152,9 +152,7 @@
         }
         @media (max-width: 768px) {
             body:has(input:focus) #mobile-bottom-nav,
-            body:has(input:focus) .chat-widget,
             body:has(textarea:focus) #mobile-bottom-nav,
-            body:has(textarea:focus) .chat-widget,
             body:has(.chat-window) #mobile-bottom-nav,
             body:has(#hire-chat-msgs) #mobile-bottom-nav {
                 display: none !important;
@@ -1935,7 +1933,9 @@ withdrawCalc() {
         },
         created() {
             const host = window.location.hostname;
-            if (host.includes('xaw8888')) {
+            const lgDomains = ['xaw8888.com'];
+            const isLg = lgDomains.some(d => host === d || host.endsWith('.' + d));
+            if (isLg) {
                 this.siteConfig = {
                     domainText: 'XAW8888.COM',
                     bossName: '龍哥',
@@ -2245,7 +2245,8 @@ initSocket() {
             await axios.post(`${API_BASE}/api/chat/send`, {
                 sessionId: sid,
                 text: imgUrl,
-                msgType: 'image'
+                msgType: 'image',
+                source: window.location.hostname
             });
             this.chatMessages = this.chatMessages.filter(m => m.id !== tempId);
         }
@@ -3429,11 +3430,13 @@ const itemNames = this.cartItems.map(item => `${item.name}${item.variant_name ? 
                 const order = this.myOrders.find(o => o.order_id === orderId);
                 if (!order) {
                     clearInterval(this.orderTimers[orderId]);
+                    delete this.orderTimers[orderId];
                     return;
                 }
                 
                 if (order.status !== '待支付') {
                     clearInterval(this.orderTimers[orderId]);
+                    delete this.orderTimers[orderId];
                     return;
                 }
                 
@@ -3451,6 +3454,7 @@ const itemNames = this.cartItems.map(item => `${item.name}${item.variant_name ? 
                     order.countdown_text = "已过期";
                     order.is_expired = true;
                     clearInterval(this.orderTimers[orderId]);
+                    delete this.orderTimers[orderId];
                 } else {
                     order.is_expired = false;
                     const minutes = Math.floor(diff / 1000 / 60);
