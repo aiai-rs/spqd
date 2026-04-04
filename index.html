@@ -344,6 +344,42 @@ html, body, div, section, main, ul, li {
             scrollbar-width: none !important;
             -ms-overflow-style: none !important;
         }
+/* [新增] 解决移动端输入框乱跑和适配 APP 体验 */
+@media (max-width: 768px) {
+    /* 当进入直聘聊天视图时 */
+    body:has([v-if="view === 'hire_chat'"]) {
+        overflow: hidden !important;
+        position: fixed;
+        width: 100%;
+    }
+
+    /* 强制聊天容器铺满剩余屏幕高度，防止键盘弹出导致位移 */
+    div[v-if="view === 'hire_chat'"] {
+        position: fixed !important;
+        top: 64px; /* 顶部导航高度 */
+        left: 0;
+        right: 0;
+        bottom: 0;
+        height: calc(100dvh - 64px) !important; /* 使用 dvh 适配动态高度 */
+        z-index: 100;
+        margin: 0 !important;
+        max-width: none !important;
+        border-radius: 0 !important;
+    }
+
+    /* 消息列表区域 */
+    #hire-chat-msgs {
+        flex: 1;
+        overflow-y: auto;
+        padding-bottom: 20px;
+    }
+
+    /* 底部输入框区域固定 */
+    div[v-if="view === 'hire_chat'"] .p-3.sm\:p-4 {
+        padding-bottom: env(safe-area-inset-bottom) !important;
+        background: white;
+    }
+}
     </style>
 
 <link rel="manifest" href="manifest.json">
@@ -622,10 +658,10 @@ html, body, div, section, main, ul, li {
 
                         <div class="grid grid-cols-2 gap-3 pt-2">
                             <a :href="'https://t.me/' + siteConfig.contactId" target="_blank" class="flex items-center justify-center gap-2 bg-white border border-slate-200 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:border-brand-500 hover:text-brand-600 transition shadow-sm">
-                                <i class="ri-telegram-fill text-[#0088cc] text-lg"></i> 联系{{ siteConfig.bossName }}
+                               <i class="ri-telegram-fill text-[#0088cc] text-lg"></i> 联系{{ siteConfig.bossName }}
                             </a>
-                            <a href="https://HY88.Pro" target="_blank" class="flex items-center justify-center gap-2 bg-white border border-slate-200 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:border-brand-500 hover:text-brand-600 transition shadow-sm">
-                                <i class="ri-global-line text-emerald-500 text-lg"></i> 招聘官网
+                            <a @click="openHireChat" class="cursor-pointer flex items-center justify-center gap-2 bg-white border border-slate-200 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:border-brand-500 hover:text-brand-600 transition shadow-sm">
+                                <i class="ri-chat-smile-3-line text-emerald-500 text-lg"></i> 直聘沟通
                             </a>
                         </div>
                     </div>
@@ -688,6 +724,55 @@ html, body, div, section, main, ul, li {
                 </div>
             </div>
         </div>
+
+        <div v-if="view === 'hire_chat'" class="animate-fade-in max-w-3xl mx-auto h-[calc(100vh-140px)] flex flex-col bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden mb-6">
+            <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+                <div class="flex items-center gap-3">
+                    <button @click="setView('hiring')" class="w-8 h-8 rounded-full bg-white border border-slate-200 flex items-center justify-center text-slate-500 hover:text-brand-500 transition shadow-sm"><i class="ri-arrow-left-line"></i></button>
+                    <div>
+                        <h2 class="text-lg font-bold text-slate-800">招聘直聘沟通</h2>
+                        <div class="text-[10px] text-emerald-500 flex items-center gap-1 font-medium mt-0.5">
+                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span> HR 人事主管在线 (支持图片)
+                        </div>
+                    </div>
+                </div>
+                <div class="w-8 h-8 bg-brand-50 text-brand-500 rounded-full flex items-center justify-center font-bold text-xs border border-brand-100">
+                    HR
+                </div>
+            </div>
+            
+            <div id="hire-chat-msgs" class="flex-1 overflow-y-auto p-4 sm:p-6 bg-[#f8fafc] flex flex-col gap-4 scrollbar-hide">
+                <div class="text-center text-xs text-slate-400 mb-2 tracking-wide font-medium">—— 沟通已加密，请放心发送您的意向岗位或资料 ——</div>
+                
+                <div v-for="(msg, idx) in chatMessages" :key="idx" class="flex w-full" :class="msg.sender === 'user' ? 'justify-end' : 'justify-start'">
+                    <div class="max-w-[80%] sm:max-w-[70%] p-3 text-[13px] sm:text-sm leading-relaxed shadow-sm transition-all"
+                         :class="msg.sender === 'user' ? 'bg-gradient-to-br from-brand-500 to-brand-600 text-white rounded-2xl rounded-tr-sm' : 'bg-white text-slate-700 border border-slate-100 rounded-2xl rounded-tl-sm'">
+                        <template v-if="msg.msg_type === 'image'">
+                            <img :src="msg.content" class="rounded-lg max-w-full cursor-pointer hover:opacity-90 transition object-cover" @click="window.open(msg.content, '_blank')" style="max-height: 220px;">
+                        </template>
+                        <template v-else>
+                            {{ msg.content }}
+                        </template>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="p-3 sm:p-4 bg-white border-t border-slate-100">
+                <div class="flex gap-2 items-end bg-slate-50/80 rounded-2xl p-1.5 sm:p-2 border border-slate-200 focus-within:border-brand-400 focus-within:ring-4 focus-within:ring-brand-50 transition-all">
+                    <button @click="$refs.hireImgInput.click()" class="p-2 text-slate-400 hover:text-brand-500 transition shrink-0 rounded-xl hover:bg-slate-200/50">
+                        <i class="ri-image-add-line text-xl sm:text-2xl"></i>
+                    </button>
+                    <input type="file" ref="hireImgInput" class="hidden" accept="image/*" @change="sendChatImage">
+                    
+                    <textarea v-model="chatInput" @keypress.enter.prevent="sendMessage" placeholder="输入你想咨询的职位或发送图片..." class="flex-1 bg-transparent border-none focus:ring-0 resize-none max-h-24 min-h-[40px] text-[13px] sm:text-sm py-2 sm:py-2.5 text-slate-700" rows="1"></textarea>
+                    
+                    <button @click="sendMessage" class="p-2 w-10 h-10 sm:w-11 sm:h-11 bg-brand-500 text-white rounded-xl hover:bg-brand-600 transition shadow-md shadow-brand-500/20 shrink-0 flex items-center justify-center mb-0.5 sm:mb-0 mr-0.5 sm:mr-0 active:scale-95">
+                        <i class="ri-send-plane-fill text-lg sm:text-xl"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
 <div v-if="view === 'profile'" class="animate-fade-in max-w-lg mx-auto pt-4">
             <div class="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden relative mb-6">
                 <div class="h-24 bg-brand-50"></div>
@@ -992,7 +1077,7 @@ class="flex items-center justify-between">
     </main> 
 
     <!-- 客服悬浮窗 -->
-    <div class="chat-widget">
+    <div class="chat-widget" v-if="view !== 'hire_chat'">
         <div v-if="chatOpen" class="chat-overlay" @click="toggleChat"></div>
         
         <div v-if="chatOpen" class="chat-window flex flex-col animate-fade-in-up">
@@ -1671,41 +1756,44 @@ const app = Vue.createApp({
                 },
 
                 view: 'home',
-                profileTab: 'orders',
-                user: JSON.parse(localStorage.getItem('nexus_user') || '{}'),
+            profileTab: 'orders',
+            user: JSON.parse(localStorage.getItem('nexus_user') || '{}'),
 
-                products: [],
-                categories: [],
-                hiringList: [],
-                myOrders: [],
-                settings: { rate: 7.0, feeRate: 0, announcement: '', showPopup: false },
-                
-                loading: true,
-                searchQuery: '',
-                filterCat: 'all',
-                mobileMenuOpen: false,
+            products: [],
+            categories: [],
+            hiringList: [],
+            myOrders: [],
+            settings: { rate: 7.0, feeRate: 0, announcement: '', showPopup: false },
+            
+            loading: true,
+            searchQuery: '',
+            filterCat: 'all',
+            mobileMenuOpen: false,
 
-                // Invite
-                inviteModal: { open: false, list: [], totalEarned: 0, loading: false },
-                // Restock
-                restockContact: '',
+            // Invite
+            inviteModal: { open: false, list: [], totalEarned: 0, loading: false },
+            // Restock
+            restockContact: '',
 
-                // Auth
-                authModal: { open: false, mode: 'login' },
-                authForm: { contact: '', password: '', confirmPassword: '', captchaInput: '', inviteCode: '' },
-                authSubmitting: false,
-                captcha: { display: '', value: '' },
+            // Auth
+            authModal: { open: false, mode: 'login' },
+            authForm: { contact: '', password: '', confirmPassword: '', captchaInput: '', inviteCode: '' },
+            authSubmitting: false,
+            captcha: { display: '', value: '' },
 
-                // Product Detail
-                productDetailModal: { open: false, prod: {} },
-                currentImgIndex: 0,
-                selectedVariant: null,
+            // Product Detail
+            productDetailModal: { open: false, prod: {} },
+            currentImgIndex: 0,
+            selectedVariant: null,
 
-                // Chat
-                chatOpen: false,
-                chatInput: '',
-                chatMessages: [],
-                chatPollTimer: null,
+            // Chat 
+            chatOpen: false,
+            chatInput: '',
+            csMessages: [],    
+            hrMessages: [],     
+            chatMessages: [],   
+            activeChatType: 'cs', 
+            chatPollTimer: null,
                 chatSessionId: localStorage.getItem('chat_session_id') || 'guest_' + Date.now(),
                 unreadMessages: 0,
                 messageSound: new Audio('https://assets.mixkit.co/sfx/preview/mixkit-correct-answer-tone-2870.mp3'),
@@ -1864,7 +1952,19 @@ mounted() {
 
             // [新增] 监听物理返回键，如果有弹窗打开，则关闭弹窗而不是退出
             window.addEventListener('popstate', (e) => {
-                // 如果有任何模态框打开，阻止返回并关闭它们
+                // 1. 如果在直聘聊天界面，返回招聘列表
+                if (this.view === 'hire_chat') {
+                    this.view = 'hiring';
+                    return;
+                }
+
+                // 2. 如果在购物车界面，返回首页
+                if (this.view === 'cart') {
+                    this.view = 'home';
+                    return;
+                }
+
+                // 3. 如果有任何模态框打开，关闭它们
                 if (this.chatOpen || this.productDetailModal.open || this.buyModal.open || this.authModal.open || this.rechargeModal.open || this.withdrawModal.open || this.inviteModal.open || this.recordModal.open || this.balanceLogModal.open) {
                     this.chatOpen = false;
                     this.productDetailModal.open = false;
@@ -1875,6 +1975,8 @@ mounted() {
                     this.inviteModal.open = false;
                     this.recordModal.open = false;
                     this.balanceLogModal.open = false;
+                    // 重新推入一个状态，防止连续点击返回键退出
+                    history.pushState(null, null, null);
                 }
             });
         },
@@ -2018,126 +2120,118 @@ beforeUnmount() {
             },
 
 initSocket() {
-                if (this.socket) {
-                    this.socket.disconnect();
+    if (this.socket) {
+        this.socket.disconnect();
+    }
+    this.socket = io(API_BASE, {
+        transports: ['websocket'],
+        reconnection: true
+    });
+    this.socket.on('connect', () => {
+        const sid_cs = this.user.id ? `user_${this.user.id}` : this.chatSessionId;
+        const sid_hr = this.user.id ? `hr_user_${this.user.id}` : `hr_${this.chatSessionId}`;
+        this.socket.emit('join_room', sid_cs);
+        this.socket.emit('join_room', sid_hr);
+    });
+    this.socket.on('global_update', (data) => {
+        this.products = data.products || [];
+        this.categories = data.categories || [];
+        this.settings.rate = data.rate;
+        this.settings.feeRate = data.feeRate;
+        this.settings.announcement = data.announcement;
+        if (data.hiring) this.hiringList = data.hiring;
+        if (data.showPopup !== undefined) this.settings.showPopup = data.showPopup;
+    });
+    this.socket.on('order_update', () => {
+        if (this.user.id) {
+            this.loadOrders();
+            this.loadUserBalance();
+            if (this.inviteModal.open) {
+                this.openInviteModal();
+            }
+        }
+    });
+    this.socket.on('force_logout', () => {
+        this.logout();
+        Swal.fire({
+            icon: 'error',
+            title: '登录失效',
+            text: '您的账号已被管理员删除',
+            confirmButtonText: '确定'
+        });
+    });
+    this.socket.on('new_message', (msg) => {
+        const sid_cs = this.user.id ? `user_${this.user.id}` : this.chatSessionId;
+        const sid_hr = this.user.id ? `hr_user_${this.user.id}` : `hr_${this.chatSessionId}`;
+        if ((this.view === 'hire_chat' && msg.session_id === sid_hr) || 
+            (this.chatOpen && msg.session_id === sid_cs)) {
+            this.chatMessages.push(msg);
+            this.$nextTick(() => {
+                const boxId = this.view === 'hire_chat' ? 'hire-chat-msgs' : 'chat-msgs';
+                const box = document.getElementById(boxId);
+                if(box) box.scrollTop = box.scrollHeight;
+                if (msg.sender === 'admin') {
+                    this.messageSound.play().catch(()=>{});
                 }
-                // [修改] 强制使用 WebSocket 协议，解决 Render 上的 400 轮询错误
-                this.socket = io(API_BASE, {
-                    transports: ['websocket'], 
-                    reconnection: true
-                });
-                const sid = this.user.id ? `user_${this.user.id}` : this.chatSessionId;
-                
-                this.socket.on('connect', () => {
-                    this.socket.emit('join_room', sid);
-                });
-
-                // 【新增】监听全局商品更新 (替代 pollUpdates)
-                this.socket.on('global_update', (data) => {
-                    this.products = data.products || [];
-                    this.categories = data.categories || [];
-                    this.settings.rate = data.rate;
-                    this.settings.feeRate = data.feeRate;
-                    this.settings.announcement = data.announcement;
-                    
-                    // [新增] 实时更新招聘和弹窗设置
-                    if (data.hiring) this.hiringList = data.hiring;
-                    if (data.showPopup !== undefined) this.settings.showPopup = data.showPopup;
-                });
-
-// 【新增】监听订单和余额更新 (客服操作后自动刷新)
-                this.socket.on('order_update', () => {
-                    if (this.user.id) {
-                        this.loadOrders(); // 刷新订单列表
-                        this.loadUserBalance(); // 刷新余额
-                        
-                        // [新增] 如果邀请模态框是打开的，立即重新加载邀请数据，实现实时跳动
-                        if (this.inviteModal.open) {
-                            this.openInviteModal();
-                        }
-
-                        
-                        //const Toast = Swal.mixin({ toast: true, position: 'top', showConfirmButton: false, timer: 3000 });
-                        //Toast.fire({ icon: 'info', title: '已刷新' });
-                    }
-                });
-
-                // [新增] 监听强制下线事件
-                this.socket.on('force_logout', () => {
-                    this.logout(); 
-                    Swal.fire({
-                        icon: 'error',
-                        title: '登录失效',
-                        text: '您的账号已被管理员删除',
-                        confirmButtonText: '确定'
-                    });
-                });
-
-                this.socket.on('new_message', (msg) => {
-                    if (msg.session_id === sid) {
-                        this.chatMessages.push(msg);
-                        this.$nextTick(() => {
-                            const box = document.getElementById('chat-msgs');
-                            if(box) box.scrollTop = box.scrollHeight;
-                            
-                            if (msg.sender === 'admin') {
-                                this.messageSound.play().catch(()=>{});
-                                if (!this.chatOpen) {
-                                    this.unreadMessages++;
-                                    this.showChatNotification(msg.msg_type === 'image' ? '[图片]' : msg.content);
-                                }
-                            }
-                        });
-                    }
-                });
-            },
+            });
+        } else {
+            if (msg.sender === 'admin') {
+                this.messageSound.play().catch(()=>{});
+                const isHR = msg.session_id.startsWith('hr_');
+                const title = isHR ? 'HR 人事 发来新消息' : '客服发来新消息';
+                if (!isHR && !this.chatOpen) {
+                    this.unreadMessages++;
+                }
+                this.showChatNotification(msg.msg_type === 'image' ? '[图片]' : msg.content, title);
+            }
+        }
+    });
+},
 
             async sendChatImage(event) {
-                const file = event.target.files[0];
-                if (!file) return;
-                
-                if (file.size > 2 * 1024 * 1024) {
-                    Swal.fire('文件过大', '请上传小于 2MB 的图片', 'warning');
-                    return;
-                }
-
-                const tempId = Date.now();
-                this.chatMessages.push({
-                    sender: 'user',
-                    content: '图片上传中...',
-                    msg_type: 'text',
-                    id: tempId
-                });
-                this.$nextTick(() => {
-                    const box = document.getElementById('chat-msgs');
-                    if(box) box.scrollTop = box.scrollHeight;
-                });
-
-                try {
-                    const formData = new FormData();
-                    formData.append('file', file);
-                    const uploadRes = await axios.post(`${API_BASE}/api/chat/upload`, formData, {
-                        headers: { 'Content-Type': 'multipart/form-data' }
-                    });
-                    
-                    if (uploadRes.data.success) {
-                        const imgUrl = uploadRes.data.url;
-                        const sid = this.user.id ? `user_${this.user.id}` : this.chatSessionId;
-                        
-                        await axios.post(`${API_BASE}/api/chat/send`, {
-                            sessionId: sid,
-                            text: imgUrl,
-                            msgType: 'image'
-                        });
-                        
-                        this.chatMessages = this.chatMessages.filter(m => m.id !== tempId);
-                    }
-                } catch (e) {
-                    Swal.fire('发送失败', '图片上传失败', 'error');
-                    this.chatMessages = this.chatMessages.filter(m => m.id !== tempId);
-                }
-                event.target.value = '';
-            },
+    const file = event.target.files[0];
+    if (!file) return;
+    if (file.size > 2 * 1024 * 1024) {
+        Swal.fire('文件过大', '请上传小于 2MB 的图片', 'warning');
+        return;
+    }
+    const tempId = Date.now();
+    this.chatMessages.push({
+        sender: 'user',
+        content: '图片上传中...',
+        msg_type: 'text',
+        id: tempId
+    });
+    this.$nextTick(() => {
+        const boxId = this.view === 'hire_chat' ? 'hire-chat-msgs' : 'chat-msgs';
+        const box = document.getElementById(boxId);
+        if(box) box.scrollTop = box.scrollHeight;
+    });
+    try {
+        const formData = new FormData();
+        formData.append('file', file);
+        const uploadRes = await axios.post(`${API_BASE}/api/chat/upload`, formData, {
+            headers: { 'Content-Type': 'multipart/form-data' }
+        });
+        if (uploadRes.data.success) {
+            const imgUrl = uploadRes.data.url;
+            let sid = this.user.id ? `user_${this.user.id}` : this.chatSessionId;
+            if (this.view === 'hire_chat') {
+                sid = this.user.id ? `hr_user_${this.user.id}` : `hr_${this.chatSessionId}`;
+            }
+            await axios.post(`${API_BASE}/api/chat/send`, {
+                sessionId: sid,
+                text: imgUrl,
+                msgType: 'image'
+            });
+            this.chatMessages = this.chatMessages.filter(m => m.id !== tempId);
+        }
+    } catch (e) {
+        Swal.fire('发送失败', '图片上传失败', 'error');
+        this.chatMessages = this.chatMessages.filter(m => m.id !== tempId);
+    }
+    event.target.value = '';
+},
             async initData() {
                 this.loading = true;
                 try {
@@ -2329,50 +2423,48 @@ this.productDetailModal.prod = prod;
                 }
             },
             
-            // [新代码] 优化轮询逻辑：窗口关闭也能收到通知
-           async pollChat() {
-                if (!this.user.id && !this.chatSessionId) return;
-
-                try {
-                    const sid = this.user.id ? `user_${this.user.id}` : this.chatSessionId;
-                    const res = await axios.get(`${API_BASE}/api/chat/history/${sid}`);
-                    const newMessages = res.data || [];
-                    const oldLength = this.chatMessages.length;
-                    
-                    if (this.chatOpen) {
-                        this.chatMessages = newMessages;
-                        if (newMessages.length > oldLength) {
-                            this.$nextTick(() => {
-                                const box = document.getElementById('chat-msgs');
-                                if(box) box.scrollTop = box.scrollHeight;
-                                this.messageSound.play().catch(()=>{});
-                            });
-                        }
-                    } 
-                    else {
-                        const adminMsgs = newMessages.filter(m => m.sender === 'admin');
-                        const lastAdminMsg = adminMsgs.length > 0 ? adminMsgs[adminMsgs.length - 1] : null;
-                        
-                        if (newMessages.length > oldLength) {
-                            // 只有初始化完成后，且确实有新消息才弹窗
-                            if (this.chatInitialized && lastAdminMsg) {
-                                this.unreadMessages = newMessages.filter(m => m.sender === 'admin' && !m.is_read).length;
-                                this.messageSound.play().catch(()=>{});
-                                this.showChatNotification(lastAdminMsg.content);
-                            }
-                        }
-                        this.chatMessages = newMessages;
-                        this.chatInitialized = true; // 标记初始化完成
-                    }
-                } catch(e){}
-            },
+            async pollChat() {
+    if (!this.user.id && !this.chatSessionId) return;
+    try {
+        let sid = this.user.id ? `user_${this.user.id}` : this.chatSessionId;
+        if (this.view === 'hire_chat') {
+            sid = this.user.id ? `hr_user_${this.user.id}` : `hr_${this.chatSessionId}`;
+        }
+        const res = await axios.get(`${API_BASE}/api/chat/history/${sid}`);
+        const newMessages = res.data || [];
+        const oldLength = this.chatMessages.length;
+        if (this.chatOpen || this.view === 'hire_chat') {
+            this.chatMessages = newMessages;
+            if (newMessages.length > oldLength) {
+                this.$nextTick(() => {
+                    const boxId = this.view === 'hire_chat' ? 'hire-chat-msgs' : 'chat-msgs';
+                    const box = document.getElementById(boxId);
+                    if(box) box.scrollTop = box.scrollHeight;
+                    this.messageSound.play().catch(()=>{});
+                });
+            }
+        } else {
+            const adminMsgs = newMessages.filter(m => m.sender === 'admin');
+            const lastAdminMsg = adminMsgs.length > 0 ? adminMsgs[adminMsgs.length - 1] : null;
+            if (newMessages.length > oldLength) {
+                if (this.chatInitialized && lastAdminMsg) {
+                    this.unreadMessages = newMessages.filter(m => m.sender === 'admin' && !m.is_read).length;
+                    this.messageSound.play().catch(()=>{});
+                    this.showChatNotification(lastAdminMsg.content);
+                }
+            }
+            this.chatMessages = newMessages;
+            this.chatInitialized = true;
+        }
+    } catch(e){}
+},
 
             // [新代码] 新增：显示丝滑的右上角通知
-            showChatNotification(text) {
+            showChatNotification(text, title = '客服发来新消息') {
                 // 使用 SweetAlert2 的 Toast 模式
                 const Toast = Swal.mixin({
                     toast: true,
-                    position: 'top-end', // 右上角弹出
+                    position: 'top-end',
                     showConfirmButton: false,
                     timer: 5000,
                     timerProgressBar: true,
@@ -2380,13 +2472,14 @@ this.productDetailModal.prod = prod;
                         toast.addEventListener('mouseenter', Swal.stopTimer)
                         toast.addEventListener('mouseleave', Swal.resumeTimer)
                         toast.addEventListener('click', () => {
-                            // 点击通知，自动打开聊天框
-                            this.chatOpen = true; 
-                            this.unreadMessages = 0;
-                            this.$nextTick(() => {
-                                const box = document.getElementById('chat-msgs');
-                                if(box) box.scrollTop = box.scrollHeight;
-                            });
+                            // 如果是 HR 消息，点击跳转直聘
+                            if (title.includes('HR')) {
+                                this.openHireChat();
+                            } else {
+                                this.chatOpen = true; 
+                                this.unreadMessages = 0;
+                                this.scrollToBottom('chat-msgs');
+                            }
                             Swal.close();
                         })
                     }
@@ -2394,7 +2487,7 @@ this.productDetailModal.prod = prod;
 
                 Toast.fire({
                     icon: 'info',
-                    title: '客服发来新消息',
+                    title: title, // 动态显示是 HR 还是 客服
                     text: text,
                     background: '#ffffff',
                     color: '#334155',
@@ -2403,21 +2496,22 @@ this.productDetailModal.prod = prod;
             },
             
            async sendMessage() {
-                const txt = this.chatInput.trim();
-                if(!txt) return;
-                
-                const sid = this.user.id ? `user_${this.user.id}` : this.chatSessionId;
-                
-                try {
-                    await axios.post(`${API_BASE}/api/chat/send`, { 
-                        sessionId: sid, 
-                        text: txt,
-                        msgType: 'text',
-                        source: window.location.hostname
-                    });
-                    this.chatInput = '';
-                } catch(e){}
-            },
+    const txt = this.chatInput.trim();
+    if(!txt) return;
+    let sid = this.user.id ? `user_${this.user.id}` : this.chatSessionId;
+    if (this.view === 'hire_chat') {
+        sid = this.user.id ? `hr_user_${this.user.id}` : `hr_${this.chatSessionId}`;
+    }
+    try {
+        await axios.post(`${API_BASE}/api/chat/send`, { 
+            sessionId: sid, 
+            text: txt,
+            msgType: 'text',
+            source: window.location.hostname
+        });
+        this.chatInput = '';
+    } catch(e){}
+},
 
             // 认证逻辑
             openAuth(mode) {
@@ -3162,6 +3256,34 @@ if (res.data.status === '已支付') {
 } catch (e) {
                     Swal.fire('错误', '网络异常', 'error');
                 }
+            },
+
+            // [新增] 招聘直聘打开逻辑
+openHireChat() {
+    this.view = 'hire_chat';
+    history.pushState({ view: 'hire_chat' }, null, '');
+    const sid_hr = this.user.id ? `hr_user_${this.user.id}` : `hr_${this.chatSessionId}`;
+    if (this.socket) {
+        this.socket.emit('join_room', sid_hr);
+    }
+    this.fetchChatHistory(sid_hr);
+    this.scrollToBottom('hire-chat-msgs');
+},
+async fetchChatHistory(sessionId) {
+    try {
+        const res = await axios.get(`${API_BASE}/api/chat/history/${sessionId}`);
+        this.chatMessages = res.data || [];
+        this.scrollToBottom('hire-chat-msgs');
+    } catch(e) {}
+},
+            // 新增通用滚动函数
+            scrollToBottom(id) {
+                this.$nextTick(() => {
+                    setTimeout(() => {
+                        const box = document.getElementById(id);
+                        if(box) box.scrollTop = box.scrollHeight;
+                    }, 100); // 延迟100ms确保键盘弹出或图片加载后的渲染完成
+                });
             },
 
             async submitRestock(prod) {
