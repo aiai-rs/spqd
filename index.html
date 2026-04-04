@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>小暗网 | 匿名交易平台</title>
-    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
     <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
@@ -60,6 +60,17 @@
         .scrollbar-hide {
             -ms-overflow-style: none;
             scrollbar-width: none;
+        }
+        
+        .animate-marquee {
+            display: inline-block;
+            padding-left: 100%;
+            animation: marquee 15s linear infinite;
+            will-change: transform;
+        }
+        @keyframes marquee {
+            0% { transform: translate3d(0, 0, 0); }
+            100% { transform: translate3d(-100%, 0, 0); }
         }
 
         .nav-item {
@@ -134,9 +145,18 @@
             .p-4 { padding: 1rem !important; } /* 减小内边距 */
         }
 
-        /* [修复] 将这段从上面的花括号里移出来，解决键盘弹出时导航栏遮挡输入框的问题 */
         @media (max-height: 600px) {
             #mobile-bottom-nav, .chat-widget {
+                display: none !important;
+            }
+        }
+        @media (max-width: 768px) {
+            body:has(input:focus) #mobile-bottom-nav,
+            body:has(input:focus) .chat-widget,
+            body:has(textarea:focus) #mobile-bottom-nav,
+            body:has(textarea:focus) .chat-widget,
+            body:has(.chat-window) #mobile-bottom-nav,
+            body:has(#hire-chat-msgs) #mobile-bottom-nav {
                 display: none !important;
             }
         }
@@ -406,7 +426,7 @@ html, body, div, section, main, ul, li {
         <div class="text-slate-400 text-sm font-bold tracking-widest">XAW LOADING...</div>
     </div>
     
-    <nav class="fixed top-0 w-full z-50 bg-white/90 backdrop-blur-md border-b border-slate-200 shadow-sm pt-[env(safe-area-inset-top)]">
+<nav class="fixed top-0 w-full z-50 bg-white/95 border-b border-slate-200 shadow-sm pt-[env(safe-area-inset-top)]">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex items-center justify-between h-16 gap-4">
 <div class="flex items-center gap-3 cursor-pointer flex-shrink-0" @click="setView('home')">
@@ -476,11 +496,13 @@ html, body, div, section, main, ul, li {
             <div class="bg-gradient-to-r from-blue-50 via-white to-indigo-50 rounded-2xl p-5 shadow-sm border border-brand-100/60 relative overflow-hidden">
                 <div class="relative z-10">
                     
-                    <div v-if="settings.announcement" class="flex items-center gap-2 mb-4 bg-brand-50/50 p-2 rounded-lg border border-brand-100/50">
-                        <span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-red-500 text-white leading-none flex-shrink-0">公告</span>
-                        <marquee scrollamount="3" class="text-sm font-medium text-brand-600 tracking-wide">
-                            {{ settings.announcement }}
-                        </marquee>
+                    <div v-if="settings.announcement" class="flex items-center gap-2 mb-4 bg-brand-50/50 p-2 rounded-lg border border-brand-100/50 overflow-hidden relative">
+                        <span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-red-500 text-white leading-none flex-shrink-0 z-10 bg-brand-50">公告</span>
+                        <div class="flex-1 overflow-hidden">
+                            <div class="animate-marquee whitespace-nowrap text-sm font-medium text-brand-600 tracking-wide">
+                                {{ settings.announcement }}
+                            </div>
+                        </div>
                     </div>
 
                     <div class="text-center space-y-3 py-2">
@@ -552,7 +574,7 @@ html, body, div, section, main, ul, li {
                     <div v-if="prod.is_pinned" class="absolute top-3 right-3 z-10 bg-gradient-to-r from-yellow-400 to-orange-400 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-md">置顶</div>
                     
                     <div class="aspect-[4/3] bg-slate-100 relative overflow-hidden">
-                        <img v-if="getImgList(prod).length > 0" :src="getImgList(prod)[0]" class="w-full h-full object-cover group-hover:scale-110 transition duration-700" @error="handleImageError">
+                        <img v-if="getImgList(prod).length > 0" :src="getImgList(prod)[0]" loading="lazy" class="w-full h-full object-cover group-hover:scale-110 transition duration-700" @error="handleImageError">
                         <div v-else class="w-full h-full flex flex-col items-center justify-center bg-slate-50">
     <div class="w-16 h-16 rounded-full bg-slate-100 flex items-center justify-center mb-2 shadow-inner">
         <i class="ri-spy-fill text-3xl text-slate-300"></i>
@@ -625,7 +647,7 @@ html, body, div, section, main, ul, li {
                         </p>
                         <p>
                             应聘或投诉和商务合作直接点击下方的 <span class="text-brand-600 font-bold">联系{{ siteConfig.bossTitle }}</span>。<br>
-                            没有Telegram也就是飞机的点击下方的 <span class="text-emerald-500 font-bold">招聘官网</span> 就可以了。
+                            没有Telegram也就是飞机的点击下方的 <span class="text-emerald-500 font-bold">人事专线</span> 就可以了。
                         </p>
                         <p class="font-medium text-slate-800">
                             投诉/应聘/商务合作请直接联系我：<a :href="'https://t.me/' + siteConfig.contactId" class="text-brand-600 font-bold hover:underline">@{{ siteConfig.contactId }}</a>
@@ -661,7 +683,7 @@ html, body, div, section, main, ul, li {
                                <i class="ri-telegram-fill text-[#0088cc] text-lg"></i> 联系{{ siteConfig.bossName }}
                             </a>
                             <a @click="openHireChat" class="cursor-pointer flex items-center justify-center gap-2 bg-white border border-slate-200 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:border-brand-500 hover:text-brand-600 transition shadow-sm">
-                                <i class="ri-chat-smile-3-line text-emerald-500 text-lg"></i> 直聘沟通
+                                <i class="ri-chat-smile-3-line text-emerald-500 text-lg"></i> 人事专线
                             </a>
                         </div>
                     </div>
@@ -730,9 +752,9 @@ html, body, div, section, main, ul, li {
                 <div class="flex items-center gap-3">
                     <button @click="setView('hiring')" class="w-8 h-8 rounded-full bg-white border border-slate-200 flex items-center justify-center text-slate-500 hover:text-brand-500 transition shadow-sm"><i class="ri-arrow-left-line"></i></button>
                     <div>
-                        <h2 class="text-lg font-bold text-slate-800">招聘直聘沟通</h2>
+                        <h2 class="text-lg font-bold text-slate-800">人事专线</h2>
                         <div class="text-[10px] text-emerald-500 flex items-center gap-1 font-medium mt-0.5">
-                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span> HR 人事主管在线 (支持图片)
+                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span> HR 人事主管在线
                         </div>
                     </div>
                 </div>
@@ -1929,7 +1951,8 @@ withdrawCalc() {
                 };
             }
 
-this.initData(); // 提前加载数据
+this.initData(); 
+axios.post(`${API_BASE}/api/public/visit`, { domain: window.location.hostname });
         },
 mounted() {
             // 【新增】监听安卓 PWA 安装事件
@@ -2409,13 +2432,11 @@ this.productDetailModal.prod = prod;
             toggleChat() {
                 this.chatOpen = !this.chatOpen;
                 if(this.chatOpen) {
-                    // [新增] 打开时推入历史记录，这样按返回键就是 popstate 而不是退出
                     history.pushState({ modal: 'chat' }, null, '');
+                    this.chatMessages = [];
+                    this.pollChat(); 
+                    this.unreadMessages = 0; 
                     
-                    this.pollChat(); // 立即拉取一次
-                    this.unreadMessages = 0; // 清空未读小红点
-                    
-                    // 滚动到底部
                     this.$nextTick(() => {
                         const box = document.getElementById('chat-msgs');
                         if(box) box.scrollTop = box.scrollHeight;
@@ -3258,17 +3279,18 @@ if (res.data.status === '已支付') {
                 }
             },
 
-            // [新增] 招聘直聘打开逻辑
-openHireChat() {
-    this.view = 'hire_chat';
-    history.pushState({ view: 'hire_chat' }, null, '');
-    const sid_hr = this.user.id ? `hr_user_${this.user.id}` : `hr_${this.chatSessionId}`;
-    if (this.socket) {
-        this.socket.emit('join_room', sid_hr);
-    }
-    this.fetchChatHistory(sid_hr);
-    this.scrollToBottom('hire-chat-msgs');
-},
+
+        openHireChat() {
+                this.view = 'hire_chat';
+                history.pushState({ view: 'hire_chat' }, null, '');
+                this.chatMessages = [];
+                const sid_hr = this.user.id ? `hr_user_${this.user.id}` : `hr_${this.chatSessionId}`;
+                if (this.socket) {
+                    this.socket.emit('join_room', sid_hr);
+                }
+                this.fetchChatHistory(sid_hr);
+                this.scrollToBottom('hire-chat-msgs');
+            },
 async fetchChatHistory(sessionId) {
     try {
         const res = await axios.get(`${API_BASE}/api/chat/history/${sessionId}`);
@@ -3631,12 +3653,14 @@ async pollUpdates() {
                         }
                     }
 
-                } catch (e) {
-                    // 静默失败
+               } catch (e) {
+                    
                 }
             },
         }
-    }).mount('#app')
+    });
+    app.config.compilerOptions.isCustomElement = tag => tag === 'marquee';
+    app.mount('#app');
 </script>
 </body>
 </html>
