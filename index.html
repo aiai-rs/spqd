@@ -782,7 +782,7 @@ html, body, div, section, main, ul, li {
                     
                     <textarea v-model="chatInput" @keypress.enter.prevent="sendMessage" placeholder="输入你想咨询的职位或发送图片..." class="flex-1 bg-transparent border-none focus:ring-0 resize-none max-h-24 min-h-[40px] text-[13px] sm:text-sm py-2 sm:py-2.5 text-slate-700" rows="1"></textarea>
                     
-                    <button @click="sendMessage" :disabled="chatSubmitting" class="p-2 w-10 h-10 sm:w-11 sm:h-11 bg-brand-500 text-white rounded-xl hover:bg-brand-600 transition shadow-md shadow-brand-500/20 shrink-0 flex items-center justify-center mb-0.5 sm:mb-0 mr-0.5 sm:mr-0 active:scale-95 disabled:opacity-50">
+                    <button @click="sendMessage" :disabled="chatSubmitting" class="p-0 w-10 h-10 sm:w-11 sm:h-11 bg-brand-500 text-white rounded-full hover:bg-brand-600 transition shadow-md shadow-brand-500/20 shrink-0 flex items-center justify-center mb-0.5 sm:mb-0 mr-0.5 sm:mr-0 active:scale-95 disabled:opacity-50">
                         <span v-if="chatSubmitting" class="animate-spin"><i class="ri-loader-4-line text-lg sm:text-xl"></i></span>
                         <i v-else class="ri-send-plane-fill text-lg sm:text-xl"></i>
                     </button>
@@ -1128,7 +1128,7 @@ class="flex items-center justify-between">
                 <input type="file" ref="chatImgInput" class="hidden" accept="image/*" @change="sendChatImage">
 
                 <input v-model="chatInput" @keypress.enter="sendMessage" placeholder="输入消息..." class="flex-1 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-brand-500">
-<button @click="sendMessage" :disabled="chatSubmitting" class="bg-brand-500 text-white rounded-lg px-3 py-2 hover:bg-brand-600 disabled:opacity-50 min-w-[44px] flex justify-center items-center">
+<button @click="sendMessage" :disabled="chatSubmitting" class="bg-brand-500 text-white rounded-full w-[44px] h-[44px] p-0 hover:bg-brand-600 disabled:opacity-50 shrink-0 flex justify-center items-center">
                     <span v-if="chatSubmitting" class="animate-spin"><i class="ri-loader-4-line"></i></span>
                     <i v-else class="ri-send-plane-fill"></i>
                 </button>
