@@ -569,8 +569,10 @@ html, body, div, section, main, ul, li {
             
             <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 product-grid">
                 <div v-for="prod in filteredProducts" :key="prod.id" @click="openProductDetail(prod)" class="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-tech-hover transition-all duration-300 group cursor-pointer border border-slate-100 flex flex-col h-full relative">
-                    <div v-if="prod.is_pinned" class="absolute top-3 right-3 z-10 bg-gradient-to-r from-yellow-400 to-orange-400 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-md">置顶</div>
-                    
+                    <div class="absolute top-3 right-3 z-10 flex flex-col gap-1 items-end">
+                        <div v-if="prod.is_pinned" class="bg-gradient-to-r from-yellow-400 to-orange-400 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-md">置顶</div>
+                        <div v-if="prod.is_hot" class="bg-gradient-to-r from-red-500 to-rose-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-md"><i class="ri-fire-fill"></i> 热销</div>
+                    </div>
                     <div class="aspect-[4/3] bg-slate-100 relative overflow-hidden">
                         <img v-if="getImgList(prod).length > 0" :src="getImgList(prod)[0]" loading="lazy" class="w-full h-full object-cover group-hover:scale-110 transition duration-700" @error="handleImageError">
                         <div v-else class="w-full h-full flex flex-col items-center justify-center bg-slate-50">
@@ -598,12 +600,6 @@ html, body, div, section, main, ul, li {
                                     {{ parseFloat(prod.price) }} <span class="text-xs font-normal text-slate-500">USDT</span>
                                 </div>
                                 <div class="text-xs text-slate-400 font-medium">≈ ¥{{ (prod.price * settings.rate).toFixed(2) }}人民币</div>
-                            </div>
-                            <div class="text-right">
-                                <span class="text-xs text-slate-400 block mb-0.5">库存</span>
-                                <span :class="prod.stock > 0 ? 'text-emerald-500 bg-emerald-50' : 'text-red-500 bg-red-50'" class="px-2 py-0.5 rounded text-xs font-bold">
-                                    {{ prod.stock > 0 ? prod.stock : '售罄' }}
-                                </span>
                             </div>
                         </div>
                     </div>
@@ -786,8 +782,9 @@ html, body, div, section, main, ul, li {
                     
                     <textarea v-model="chatInput" @keypress.enter.prevent="sendMessage" placeholder="输入你想咨询的职位或发送图片..." class="flex-1 bg-transparent border-none focus:ring-0 resize-none max-h-24 min-h-[40px] text-[13px] sm:text-sm py-2 sm:py-2.5 text-slate-700" rows="1"></textarea>
                     
-                    <button @click="sendMessage" class="p-2 w-10 h-10 sm:w-11 sm:h-11 bg-brand-500 text-white rounded-xl hover:bg-brand-600 transition shadow-md shadow-brand-500/20 shrink-0 flex items-center justify-center mb-0.5 sm:mb-0 mr-0.5 sm:mr-0 active:scale-95">
-                        <i class="ri-send-plane-fill text-lg sm:text-xl"></i>
+                    <button @click="sendMessage" :disabled="chatSubmitting" class="p-2 w-10 h-10 sm:w-11 sm:h-11 bg-brand-500 text-white rounded-xl hover:bg-brand-600 transition shadow-md shadow-brand-500/20 shrink-0 flex items-center justify-center mb-0.5 sm:mb-0 mr-0.5 sm:mr-0 active:scale-95 disabled:opacity-50">
+                        <span v-if="chatSubmitting" class="animate-spin"><i class="ri-loader-4-line text-lg sm:text-xl"></i></span>
+                        <i v-else class="ri-send-plane-fill text-lg sm:text-xl"></i>
                     </button>
                 </div>
             </div>
@@ -1131,7 +1128,10 @@ class="flex items-center justify-between">
                 <input type="file" ref="chatImgInput" class="hidden" accept="image/*" @change="sendChatImage">
 
                 <input v-model="chatInput" @keypress.enter="sendMessage" placeholder="输入消息..." class="flex-1 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-brand-500">
-                <button @click="sendMessage" class="bg-brand-500 text-white rounded-lg px-3 py-2 hover:bg-brand-600"><i class="ri-send-plane-fill"></i></button>
+<button @click="sendMessage" :disabled="chatSubmitting" class="bg-brand-500 text-white rounded-lg px-3 py-2 hover:bg-brand-600 disabled:opacity-50 min-w-[44px] flex justify-center items-center">
+                    <span v-if="chatSubmitting" class="animate-spin"><i class="ri-loader-4-line"></i></span>
+                    <i v-else class="ri-send-plane-fill"></i>
+                </button>
             </div>
         </div>
         <button @click="toggleChat" class="w-14 h-14 bg-gradient-to-r from-brand-500 to-brand-purple rounded-full shadow-lg text-white flex items-center justify-center text-2xl hover:scale-105 transition relative">
@@ -1207,31 +1207,14 @@ class="flex items-center justify-between">
                     </div>
 
                     <div class="mt-auto pt-6 border-t border-slate-100">
-                        <div class="flex items-center justify-between mb-4">
-                            <span class="text-sm text-slate-500">库存状态</span>
-                            <span :class="productDetailModal.prod.stock > 0 ? 'text-emerald-600' : 'text-red-600'" class="font-bold text-sm">
-                                {{ productDetailModal.prod.stock > 0 ? `剩余 ${productDetailModal.prod.stock} 件` : '暂时缺货' }}
-                            </span>
-                        </div>
                         <div class="flex flex-col gap-3">
-    <template v-if="productDetailModal.prod.stock > 0">
         <button @click="openBuyModal(productDetailModal.prod)" class="w-full btn-gradient text-white font-bold py-4 rounded-xl shadow-lg shadow-brand-500/20 hover:-translate-y-0.5 transition flex items-center justify-center gap-2 text-base">
             <i class="ri-flash-light-fill"></i> 立即购买
         </button>
         <button @click="addToCart(productDetailModal.prod)" class="w-full bg-white border-2 border-slate-100 text-slate-600 font-bold py-3.5 rounded-xl hover:bg-slate-50 hover:border-slate-200 hover:text-brand-600 transition flex items-center justify-center gap-2">
             <i class="ri-shopping-cart-2-line"></i> 加入购物车
         </button>
-    </template>
-    <template v-else>
-        <div class="bg-orange-50 p-3 rounded-xl border border-orange-100">
-            <p class="text-xs text-orange-600 font-bold mb-2">📢 商品缺货，登记后客服补货会通知您</p>
-            <div class="flex gap-2">
-                <input v-model="restockContact" placeholder="输入您的 邮箱 或 Telegram" class="flex-1 text-sm p-2 border border-orange-200 rounded-lg outline-none focus:border-orange-400">
-                <button @click="submitRestock(productDetailModal.prod)" class="bg-orange-500 text-white text-sm px-4 rounded-lg font-bold hover:bg-orange-600">提交</button>
-            </div>
-        </div>
-    </template>
-</div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -1814,6 +1797,7 @@ const app = Vue.createApp({
             chatMessages: [],   
             activeChatType: 'cs', 
             chatPollTimer: null,
+                chatSubmitting: false,
                 chatSessionId: localStorage.getItem('chat_session_id') || 'guest_' + Date.now(),
                 unreadMessages: 0,
                 messageSound: new Audio('https://assets.mixkit.co/sfx/preview/mixkit-correct-answer-tone-2870.mp3'),
@@ -1868,21 +1852,28 @@ filteredProducts() {
     });
 
     // 2. 执行核心排序逻辑
-    return list.sort((a, b) => {
-        // 第一层排序：置顶逻辑 (is_pinned)
-        // b.is_pinned 如果是 1，a.is_pinned 是 0，则 b 排在 a 前面
-        const pinA = a.is_pinned ? 1 : 0;
-        const pinB = b.is_pinned ? 1 : 0;
-        
-        if (pinA !== pinB) {
-            return pinB - pinA; 
-        }
+        return list.sort((a, b) => {
+            // 第一层排序：置顶逻辑 (is_pinned)
+            const pinA = a.is_pinned ? 1 : 0;
+            const pinB = b.is_pinned ? 1 : 0;
+            if (pinA !== pinB) return pinB - pinA; 
+            
+            // 第二层排序：热销逻辑 (is_hot)
+            const hotA = a.is_hot ? 1 : 0;
+            const hotB = b.is_hot ? 1 : 0;
+            if (hotA !== hotB) return hotB - hotA;
+            
+            // 都是热销时，谁先设置的热销谁排前面 (hot_time 越小越靠前)
+            if (hotA === 1 && hotB === 1) {
+                const timeA = a.hot_time ? new Date(a.hot_time).getTime() : 0;
+                const timeB = b.hot_time ? new Date(b.hot_time).getTime() : 0;
+                if (timeA !== timeB) return timeA - timeB;
+            }
 
-        // 第二层排序：时间/ID顺序 (最新上架在前)
-        // 如果置顶状态相同，则比较 ID。b.id - a.id 表示 ID 越大（越晚生上架）的越靠前
-        return b.id - a.id; 
-    });
-},
+            // 第三层排序：时间/ID顺序 (最新上架在前)
+            return b.id - a.id; 
+        });
+    },
             currentProdImgs() {
                 return this.getImgList(this.productDetailModal.prod);
             },
@@ -2518,22 +2509,26 @@ this.productDetailModal.prod = prod;
             },
             
            async sendMessage() {
-    const txt = this.chatInput.trim();
-    if(!txt) return;
-    let sid = this.user.id ? `user_${this.user.id}` : this.chatSessionId;
-    if (this.view === 'hire_chat') {
-        sid = this.user.id ? `hr_user_${this.user.id}` : `hr_${this.chatSessionId}`;
-    }
-    try {
-        await axios.post(`${API_BASE}/api/chat/send`, { 
-            sessionId: sid, 
-            text: txt,
-            msgType: 'text',
-            source: window.location.hostname
-        });
-        this.chatInput = '';
-    } catch(e){}
-},
+                if(this.chatSubmitting) return;
+                const txt = this.chatInput.trim();
+                if(!txt) return;
+                this.chatSubmitting = true;
+                let sid = this.user.id ? `user_${this.user.id}` : this.chatSessionId;
+                if (this.view === 'hire_chat') {
+                    sid = this.user.id ? `hr_user_${this.user.id}` : `hr_${this.chatSessionId}`;
+                }
+                try {
+                    await axios.post(`${API_BASE}/api/chat/send`, { 
+                        sessionId: sid, 
+                        text: txt,
+                        msgType: 'text',
+                        source: window.location.hostname
+                    });
+                    this.chatInput = '';
+                } catch(e){} finally {
+                    this.chatSubmitting = false;
+                }
+            },
 
             // 认证逻辑
             openAuth(mode) {
