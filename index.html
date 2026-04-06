@@ -2289,11 +2289,24 @@ initSocket() {
                         // 如果从没弹过，或者 (当前时间 > 上次时间 + 间隔时间)
                         if (!lastPopStr || (now > parseInt(lastPopStr) + duration)) {
                             Swal.fire({
-                                title: '平台公告',
-                                text: this.settings.announcement,
-                                icon: 'info',
-                                confirmButtonColor: '#3b82f6',
-                                confirmButtonText: '我知道了'
+                                html: `
+                                    <div class="flex flex-col items-center pt-4 pb-2">
+                                        <div class="w-16 h-16 rounded-full bg-gradient-to-br from-blue-400 to-brand-600 flex items-center justify-center mb-4 shadow-lg shadow-blue-500/30 animate-bounce">
+                                            <i class="ri-notification-3-fill text-3xl text-white"></i>
+                                        </div>
+                                        <h3 class="text-xl font-black text-slate-800 tracking-wider mb-4">平台公告</h3>
+                                        <div class="text-sm text-slate-600 leading-relaxed bg-slate-50 p-4 rounded-xl border border-slate-100 w-full text-left font-medium">
+                                            ${this.settings.announcement}
+                                        </div>
+                                    </div>
+                                `,
+                                showConfirmButton: true,
+                                confirmButtonText: '我知道了',
+                                buttonsStyling: false,
+                                customClass: {
+                                    popup: 'rounded-3xl border border-slate-100 shadow-2xl',
+                                    confirmButton: 'w-full btn-gradient text-white font-bold py-3.5 rounded-xl shadow-lg shadow-blue-500/30 hover:-translate-y-0.5 transition active:scale-95 text-sm tracking-widest mt-2'
+                                }
                             });
                             // 记录本次弹窗的时间
                             localStorage.setItem('nexus_last_pop', now.toString());
@@ -3341,8 +3354,16 @@ async fetchChatHistory(sessionId) {
                 tempInput.select();
                 document.execCommand('copy');
                 document.body.removeChild(tempInput);
-                const Toast = Swal.mixin({ toast: true, position: 'top', showConfirmButton: false, timer: 1500, customClass: { popup: 'rounded-2xl shadow-lg border border-slate-100' } });
-                Toast.fire({ icon: 'success', title: ' 复制成功' });
+                const Toast = Swal.mixin({ 
+                    toast: true, 
+                    position: 'top', 
+                    showConfirmButton: false, 
+                    timer: 2000, 
+                    customClass: { popup: 'rounded-2xl shadow-lg border border-emerald-100 bg-emerald-50 mt-4' } 
+                });
+                Toast.fire({ 
+                    html: '<div class="flex items-center justify-center gap-2 text-emerald-600 font-bold text-sm tracking-widest"><i class="ri-checkbox-circle-fill text-xl"></i> 复制成功</div>' 
+                });
             },
 
             // 新增通用滚动函数
