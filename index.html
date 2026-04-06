@@ -494,12 +494,16 @@ html, body, div, section, main, ul, li {
             <div class="bg-gradient-to-r from-blue-50 via-white to-indigo-50 rounded-2xl p-5 shadow-sm border border-brand-100/60 relative overflow-hidden">
                 <div class="relative z-10">
                     
-                    <div v-if="settings.announcement" class="flex items-center gap-2 mb-4 bg-brand-50/50 p-2 rounded-lg border border-brand-100/50 overflow-hidden relative">
-                        <span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-red-500 text-white leading-none flex-shrink-0 z-10 bg-brand-50">公告</span>
-                        <div class="flex-1 overflow-hidden">
-                            <div class="animate-marquee whitespace-nowrap text-sm font-medium text-brand-600 tracking-wide">
+                   <div v-if="settings.announcement" class="flex items-center gap-3 mb-5 bg-gradient-to-r from-white via-blue-50/30 to-white p-2.5 rounded-xl border border-blue-100/80 shadow-[0_2px_10px_rgba(59,130,246,0.05)] overflow-hidden relative">
+                        <div class="flex items-center justify-center w-7 h-7 rounded-full bg-gradient-to-br from-red-400 to-rose-500 text-white flex-shrink-0 z-10 shadow-md shadow-red-500/30 animate-bounce">
+                            <i class="ri-notification-3-fill text-sm"></i>
+                        </div>
+                        <div class="flex-1 overflow-hidden relative">
+                            <div class="absolute left-0 top-0 bottom-0 w-4 bg-gradient-to-r from-white to-transparent z-10"></div>
+                            <div class="animate-marquee whitespace-nowrap text-[13px] font-bold text-slate-700 tracking-wide">
                                 {{ settings.announcement }}
                             </div>
+                            <div class="absolute right-0 top-0 bottom-0 w-4 bg-gradient-to-l from-white to-transparent z-10"></div>
                         </div>
                     </div>
 
@@ -1239,7 +1243,7 @@ class="flex items-center justify-between">
                                 {{ user.inviteCode || '请先登录' }}
                             </span>
                         </div>
-                        <button @click="navigator.clipboard.writeText(user.inviteCode); Swal.fire({icon:'success', title:'复制成功', timer:1000, showConfirmButton:false})" class="w-full btn-gradient text-white font-bold py-2.5 rounded-lg shadow-violet-500/30 shadow-lg hover:-translate-y-0.5 transition flex items-center justify-center gap-2 text-sm">
+                       <button @click="copyText(user.inviteCode)" class="w-full btn-gradient text-white font-bold py-2.5 rounded-lg shadow-violet-500/30 shadow-lg hover:-translate-y-0.5 transition flex items-center justify-center gap-2 text-sm">
                             <i class="ri-file-copy-line"></i> 复制邀请码
                         </button>
                     </div>
@@ -3337,7 +3341,8 @@ async fetchChatHistory(sessionId) {
                 tempInput.select();
                 document.execCommand('copy');
                 document.body.removeChild(tempInput);
-                Swal.fire({icon: 'success', title: '复制成功', timer: 1000, showConfirmButton: false});
+                const Toast = Swal.mixin({ toast: true, position: 'top', showConfirmButton: false, timer: 1500, customClass: { popup: 'rounded-2xl shadow-lg border border-slate-100' } });
+                Toast.fire({ icon: 'success', title: ' 复制成功' });
             },
 
             // 新增通用滚动函数
