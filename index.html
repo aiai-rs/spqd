@@ -2808,9 +2808,7 @@ if (res.data.status === '已支付') {
 
                         // 构建弹窗内容
                         if (this.buyForm.method === 'USDT') {
-                            const randomCents = res.data.orderId.toString().slice(-2);
-                            const randomDecimal = (parseInt(randomCents) % 30) / 100;
-                            const finalAmount = (parseFloat(res.data.usdtAmount) + randomDecimal).toFixed(2);
+                            const finalAmount = parseFloat(res.data.usdtAmount).toFixed(4);
                             
                             msg += `
                                 请在 <b id="success-timer" class="text-red-500 font-mono text-lg">30:00</b> 内完成支付<br>
@@ -2925,10 +2923,7 @@ if (res.data.status === '已支付') {
 
                 // 2. [新增] 如果是 USDT 支付 或 余额充值，显示图二那种漂亮的地址详情页
                 if (order.payment_method === 'USDT' || order.product_name === '余额充值') {
-                    // 计算带随机小数的金额（用于核对）
-                    const randomCents = order.order_id.toString().slice(-2);
-                    const randomDecimal = (parseInt(randomCents) % 30) / 100;
-                    const finalAmount = (parseFloat(order.usdt_amount) + randomDecimal).toFixed(2);
+                    const finalAmount = parseFloat(order.usdt_amount).toFixed(4);
                     
                     let timerInterval;
                     
