@@ -952,35 +952,27 @@ order.product_name }}</h3>
                                 <span class="text-lg font-bold text-slate-800 font-mono">{{ parseFloat(order.usdt_amount).toFixed(2) }} <span class="text-xs font-normal text-slate-500">USDT</span></span>
                             </div>
                             
-                            <div class="flex flex-col w-full mt-3 gap-3">
-                                                <div v-if="order.status === '待支付' && !isOrderExpired(order) && (order.payment_method === 'USDT' || order.payment_method === 'usdt')" class="w-full bg-indigo-50/80 p-3.5 rounded-xl border border-indigo-100 text-[13px] text-indigo-700 leading-loose tracking-[1px] font-medium shadow-sm">
-                                                    <div class="flex items-start gap-2">
-                                                        <i class="ri-information-fill text-indigo-500 text-base mt-0.5"></i>
-                                                        <div>
-                                                            <p class="mb-1"><span class="font-bold text-indigo-800">支付提示：</span>支付成功后，系统会自动变更为“已支付”。</p>
-                                                            <p class="text-xs opacity-90">如长时间未到账，请点击下方<b class="mx-1">上传凭证</b>，或联系在线客服核实。</p>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                                
-                                                <div class="flex justify-end items-center w-full gap-2 mt-1">
-                                                    <button v-if="order.status === '待支付' && !isOrderExpired(order)" @click.stop="cancelOrder(order.order_id)" class="px-4 py-2.5 text-slate-500 text-xs font-bold bg-white hover:bg-slate-50 rounded-xl transition border border-slate-200 shadow-sm active:scale-95">
-                                                        取消订单
-                                                    </button>
-                                                    
-                                                    <button v-if="order.status === '待支付' && !isOrderExpired(order)" @click.stop="showPaymentInfo(order)" class="btn-gradient px-5 py-2.5 text-white text-xs font-bold rounded-xl shadow-lg shadow-brand-500/30 hover:-translate-y-0.5 transition flex items-center justify-center gap-1 active:scale-95">
-                                                        {{ (order.payment_method === 'USDT' || order.payment_method === 'usdt') ? '查看详情 / 上传凭证' : '去支付 / 上传凭证' }} <i class="ri-secure-payment-line"></i>
-                                                    </button>
+                            <div class="flex flex-col w-full mt-2 gap-3">
+                                <div v-if="order.status === '待支付' && !isOrderExpired(order) && (order.payment_method === 'USDT' || order.payment_method === 'usdt')" class="w-full bg-blue-50/80 p-4 rounded-xl border border-blue-100 text-[13px] text-blue-700 leading-[1.8] text-left tracking-[0.05em] font-medium shadow-sm">
+                                    <i class="ri-information-fill text-blue-500 text-base align-middle mr-1"></i> 订单支付成功后，系统将自动更新为<span class="font-bold">已支付</span>状态。若长时间未到账，请点击下方上传凭证让客服核实，或直接联系在线客服。
+                                </div>
+                                <div class="flex justify-end items-center w-full gap-2.5">
+                                    <button v-if="order.status === '待支付' && !isOrderExpired(order)" @click.stop="cancelOrder(order.order_id)" class="px-4 py-2.5 text-slate-500 text-xs font-bold hover:bg-slate-100 hover:text-slate-700 rounded-xl transition border border-slate-200">
+                                        取消订单
+                                    </button>
+                                    <button v-if="order.status === '待支付' && !isOrderExpired(order)" @click.stop="showPaymentInfo(order)" class="btn-gradient px-5 py-2.5 text-white text-xs font-bold rounded-xl shadow-lg shadow-brand-500/30 hover:-translate-y-0.5 transition flex items-center justify-center gap-1 active:scale-95">
+                                        {{ (order.payment_method === 'USDT' || order.payment_method === 'usdt') ? '查看详情 / 上传凭证' : '去支付 / 上传凭证' }} <i class="ri-secure-payment-line"></i>
+                                    </button>
+                                    
+                                    <button v-if="order.status === '待核实'" class="px-4 py-2.5 text-brand-600 bg-brand-50 text-xs font-bold rounded-xl cursor-default border border-brand-100">
+                                        <i class="ri-time-line"></i> 凭证核实中
+                                    </button>
 
-                                                    <button v-if="order.status === '待核实'" class="px-4 py-2.5 text-brand-600 bg-brand-50 text-xs font-bold rounded-xl cursor-default border border-brand-100 shadow-sm">
-                                                        <i class="ri-time-line"></i> 凭证核实中
-                                                    </button>
-
-                                                    <button v-if="order.status === '已支付' || order.status === '已发货'" @click.stop="toggleChat" class="px-4 py-2.5 text-emerald-600 bg-emerald-50 text-xs font-bold rounded-xl hover:bg-emerald-100 transition border border-emerald-100 shadow-sm active:scale-95">
-                                                        <i class="ri-customer-service-2-line"></i> 联系售后
-                                                    </button>
-                                                </div>
-                                            </div>
+                                    <button v-if="order.status === '已支付' || order.status === '已发货'" @click.stop="toggleChat" class="px-4 py-2.5 text-emerald-600 bg-emerald-50 text-xs font-bold rounded-xl hover:bg-emerald-100 transition border border-emerald-100">
+                                        <i class="ri-customer-service-2-line"></i> 联系售后
+                                    </button>
+                                </div>
+                            </div>
                         </div>
 
                         <div v-if="order.status === '已取消'" class="mt-3 bg-red-50 border border-red-100 rounded-lg p-3 text-xs text-red-600 leading-relaxed flex items-start gap-2">
@@ -2299,34 +2291,30 @@ initSocket() {
                         const now = Date.now();
                         
                         // 如果从没弹过，或者 (当前时间 > 上次时间 + 间隔时间)
-                            if (!lastPopStr || (now > parseInt(lastPopStr) + duration)) {
-                                Swal.fire({
-                                    html: `
-                                        <div class="flex flex-col items-center pt-6 pb-2 px-2">
-                                            <div class="w-16 h-16 rounded-full bg-gradient-to-br from-brand-400 to-brand-600 flex items-center justify-center mb-5 shadow-xl shadow-brand-500/40 relative">
-                                                <div class="absolute inset-0 rounded-full border-4 border-white/30 animate-ping"></div>
-                                                <i class="ri-notification-3-fill text-3xl text-white relative z-10"></i>
-                                            </div>
-                                            <h3 class="text-2xl font-black text-slate-800 tracking-[0.1em] mb-5 relative inline-block">
-                                                平台公告
-                                                <span class="absolute -bottom-2 left-1/2 transform -translate-x-1/2 w-8 h-1 bg-brand-500 rounded-full"></span>
-                                            </h3>
-                                            <div class="text-[15px] text-slate-700 leading-[2.2] tracking-[1px] bg-slate-50/80 p-5 rounded-2xl border border-slate-100 w-full text-left font-medium shadow-inner mt-2">
-                                                ${this.settings.announcement}
-                                            </div>
+                        if (!lastPopStr || (now > parseInt(lastPopStr) + duration)) {
+                            Swal.fire({
+                                html: `
+                                    <div class="flex flex-col items-center pt-6 pb-2 px-2">
+                                        <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-500 to-brand-600 flex items-center justify-center mb-5 shadow-lg shadow-blue-500/40 transform rotate-3">
+                                            <i class="ri-notification-4-fill text-3xl text-white -rotate-3"></i>
                                         </div>
-                                    `,
-                                    showConfirmButton: true,
-                                    confirmButtonText: '我知道了',
-                                    buttonsStyling: false,
-                                    customClass: {
-                                        popup: 'rounded-[2rem] border border-slate-100 shadow-2xl pb-4',
-                                        confirmButton: 'w-[85%] mx-auto btn-gradient text-white font-bold py-3.5 rounded-2xl shadow-xl shadow-brand-500/30 hover:shadow-brand-500/50 hover:-translate-y-1 transition-all active:scale-95 text-base tracking-[0.2em] mt-4 mb-2 flex items-center justify-center'
-                                    }
-                                });
-                                // 记录本次弹窗的时间
-                                localStorage.setItem('nexus_last_pop', now.toString());
-                            }
+                                        <h3 class="text-2xl font-black text-slate-800 tracking-[0.1em] mb-5">平台公告</h3>
+                                        <div class="text-[15px] text-slate-600 leading-[1.8] bg-blue-50/50 p-5 rounded-2xl border border-blue-100/50 w-full text-left font-medium tracking-wide">
+                                            ${this.settings.announcement}
+                                        </div>
+                                    </div>
+                                `,
+                                showConfirmButton: true,
+                                confirmButtonText: '我 知 道 了',
+                                buttonsStyling: false,
+                                customClass: {
+                                    popup: 'rounded-[2rem] border border-white/80 shadow-2xl bg-white/95 backdrop-blur-xl p-2',
+                                    confirmButton: 'w-[90%] mx-auto mb-4 bg-gradient-to-r from-blue-500 to-brand-600 text-white font-bold py-4 rounded-2xl shadow-xl shadow-blue-500/30 hover:shadow-blue-500/50 hover:-translate-y-1 transition-all active:scale-95 text-[15px] tracking-[0.2em]'
+                                }
+                            });
+                            // 记录本次弹窗的时间
+                            localStorage.setItem('nexus_last_pop', now.toString());
+                        }
                     }
                     if (this.user.id) {
                         this.loadOrders();
@@ -2819,19 +2807,21 @@ if (res.data.status === '已支付') {
                             return;
                         }
 
-                       let timerInterval;
+                        let timerInterval;
 
                         if (this.buyForm.method === 'USDT') {
-                            const finalAmount = parseFloat(res.data.usdtAmount).toFixed(4); // 修改：USDT保留4位小数或2位视你的需求而定，这里参考你的图二改成精准的浮点数
+                            const finalAmount = parseFloat(res.data.usdtAmount).toFixed(4);
+                            
                             await Swal.fire({
+                                title: '', 
                                 html: `
                                     <div class="flex flex-col items-center pt-2">
-                                        <div class="w-16 h-16 rounded-full bg-emerald-100 flex items-center justify-center mb-3 border border-emerald-200 shadow-inner">
+                                        <div class="w-16 h-16 rounded-full bg-emerald-100 flex items-center justify-center mb-3">
                                             <i class="ri-check-line text-4xl text-emerald-500"></i>
                                         </div>
                                         <h3 class="text-2xl font-bold text-slate-800 mb-1">等待支付</h3>
                                         <div class="text-sm text-slate-500 mb-4">订单号: <span class="font-mono font-bold text-slate-700">${res.data.orderId}</span></div>
-                                        <div class="text-sm text-slate-500 mb-1">请在 <b id="new-pay-timer" class="text-red-500 font-mono text-lg">30:00</b> 内完成支付</div>
+                                        <div class="text-sm text-slate-500 mb-1">请在 <b id="pay-timer" class="text-red-500 font-mono text-lg">30:00</b> 内完成支付</div>
                                         <div class="mb-4">
                                             <span class="text-sm text-slate-500">支付金额:</span>
                                             <span class="text-2xl font-bold text-red-500 ml-1">${finalAmount} USDT</span>
@@ -2839,9 +2829,9 @@ if (res.data.status === '已支付') {
                                         <p class="text-[10px] text-slate-400 mb-4">(已自动包含随机小数以便核对)</p>
                                         <div class="w-full text-left mb-1 text-sm font-bold text-slate-700">支付地址 (TRC20):</div>
                                         <div class="w-full bg-slate-50 p-3 rounded-xl border border-dashed border-brand-300 relative cursor-pointer hover:bg-blue-50 transition group" 
-                                             onclick="navigator.clipboard.writeText('${res.data.wallet}'); const tip=document.getElementById('copy-tip-new'); tip.innerHTML='✅ 地址已复制，请务必仔细核对！'; tip.className='text-center text-xs text-emerald-600 mt-1 font-bold';">
+                                             onclick="navigator.clipboard.writeText('${res.data.wallet}'); const tip=document.getElementById('copy-tip-success'); tip.innerHTML='✅ 地址已复制，请务必仔细核对！'; tip.className='text-center text-xs text-emerald-600 mt-1 font-bold';">
                                             <div class="font-mono text-sm font-bold text-slate-800 break-all text-center select-all">${res.data.wallet}</div>
-                                            <div id="copy-tip-new" class="text-center text-xs text-brand-500 mt-1 flex items-center justify-center gap-1 transition-all">
+                                            <div id="copy-tip-success" class="text-center text-xs text-brand-500 mt-1 flex items-center justify-center gap-1 transition-all">
                                                 <i class="ri-file-copy-line"></i> 点击复制地址
                                             </div>
                                         </div>
@@ -2850,7 +2840,7 @@ if (res.data.status === '已支付') {
                                             <ul class="text-[11px] text-orange-800 space-y-0.5 list-decimal pl-4">
                                                 <li>必须支付 <b class="text-red-500">${finalAmount}</b> 才能自动到账。</li>
                                                 <li>30分钟内未支付订单将自动过期。</li>
-                                                <li>多出来的小数点是系统随机生成用于区分订单的，支付后多出的金额会退到账户余额。</li>
+                                                <li>多出来的小数点是系统随机生成的用于区分订单是否支付成功，支付后会到你的账户余额。</li>
                                             </ul>
                                         </div>
                                     </div>
@@ -2859,14 +2849,15 @@ if (res.data.status === '已支付') {
                                 confirmButtonText: '我已支付 / 上传凭证',
                                 showCancelButton: true,
                                 cancelButtonText: '稍后支付',
-                                buttonsStyling: false,
+                                confirmButtonColor: '#3b82f6',
+                                cancelButtonColor: '#94a3b8',
                                 customClass: {
-                                    popup: 'rounded-3xl p-2 shadow-2xl',
-                                    confirmButton: 'w-full btn-gradient text-white font-bold py-3.5 rounded-xl shadow-lg mt-2 active:scale-95 transition',
-                                    cancelButton: 'w-full bg-slate-100 text-slate-500 font-bold py-3.5 rounded-xl hover:bg-slate-200 mt-3 active:scale-95 transition'
+                                    popup: 'rounded-3xl',
+                                    confirmButton: 'w-full btn-gradient text-white font-bold py-3 rounded-xl shadow-lg mt-2',
+                                    cancelButton: 'w-full bg-slate-100 text-slate-500 font-bold py-3 rounded-xl hover:bg-slate-200 mt-2'
                                 },
                                 didOpen: () => {
-                                    const timerDisplay = document.getElementById('new-pay-timer');
+                                    const timerDisplay = document.getElementById('pay-timer');
                                     if (timerDisplay) {
                                         let timeLeft = 30 * 60; 
                                         timerInterval = setInterval(() => {
@@ -2893,7 +2884,6 @@ if (res.data.status === '已支付') {
                                 }
                             });
                         } else {
-                            // 微信/支付宝等其他支付的成功弹窗保持原来逻辑不变
                             await Swal.fire({
                                 html: `
                                     <div class="flex flex-col items-center pt-2">
@@ -2912,15 +2902,11 @@ if (res.data.status === '已支付') {
                                     </div>
                                 `,
                                 showConfirmButton: true,
-                                confirmButtonText: '查看订单',
+                                confirmButtonText: '我知道了',
                                 buttonsStyling: false,
                                 customClass: {
-                                    popup: 'rounded-3xl p-2 shadow-2xl',
-                                    confirmButton: 'w-full btn-gradient text-white font-bold py-3.5 rounded-xl shadow-lg mt-2 active:scale-95 transition'
-                                }
-                            }).then((result) => {
-                                if (result.isConfirmed || result.isDismissed) {
-                                    this.checkLoginAndGo('orders_page');
+                                    popup: 'rounded-[2rem] p-2 shadow-2xl',
+                                    confirmButton: 'w-full bg-slate-800 text-white font-bold py-3.5 rounded-xl shadow-lg mt-2 active:scale-95 transition tracking-widest'
                                 }
                             });
                         }
