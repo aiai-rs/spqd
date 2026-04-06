@@ -952,27 +952,30 @@ order.product_name }}</h3>
                                 <span class="text-lg font-bold text-slate-800 font-mono">{{ parseFloat(order.usdt_amount).toFixed(2) }} <span class="text-xs font-normal text-slate-500">USDT</span></span>
                             </div>
                             
-                            <div class="flex flex-wrap justify-end gap-2 mt-2">
-                                <button v-if="order.status === '待支付' && !isOrderExpired(order)" @click.stop="cancelOrder(order.order_id)" class="px-4 py-2 text-slate-500 text-xs font-bold hover:bg-slate-100 rounded-lg transition border border-slate-200">
-                                    取消订单
-                                </button>
-                                
-                                <div v-if="order.status === '待支付' && !isOrderExpired(order)" class="flex flex-col items-end gap-2 w-full mt-2">
-                                    <div v-if="order.payment_method === 'USDT' || order.payment_method === 'usdt'" class="w-full bg-blue-50/60 p-3 rounded-xl border border-blue-100 text-[12px] text-blue-600 leading-relaxed text-left tracking-wide font-medium">
-                                        <i class="ri-information-line text-blue-500 text-sm align-middle"></i> 稍等，你的订单支付成功后系统会显示已支付，如你支付了很久没到账你可以点击下方上传凭证让客服核实，或联系在线客服。
-                                    </div>
-                                    <button @click.stop="showPaymentInfo(order)" class="btn-gradient px-5 py-2.5 text-white text-xs font-bold rounded-xl shadow-lg shadow-brand-500/30 hover:-translate-y-0.5 transition flex items-center justify-center gap-1 active:scale-95">
-                                        {{ (order.payment_method === 'USDT' || order.payment_method === 'usdt') ? '查看详情 / 上传凭证' : '去支付 / 上传凭证' }} <i class="ri-secure-payment-line"></i>
-                                    </button>
+                            <div class="flex flex-col w-full mt-2 gap-3">
+                                <div v-if="order.status === '待支付' && !isOrderExpired(order) && (order.payment_method === 'USDT' || order.payment_method === 'usdt')" class="w-full bg-blue-50/60 p-3 rounded-xl border border-blue-100 text-[12px] text-blue-600 leading-relaxed text-left tracking-wide font-medium">
+                                    <i class="ri-information-line text-blue-500 text-sm align-middle"></i> 稍等，你的订单支付成功后系统会显示已支付，如你支付了很久没到账你可以点击下方上传凭证让客服核实，或联系在线客服。
                                 </div>
-                                
-                                <button v-if="order.status === '待核实'" class="px-3 py-2 text-brand-600 bg-brand-50 text-xs font-bold rounded-lg cursor-default border border-brand-100">
-                                    <i class="ri-time-line"></i> 凭证核实中
-                                </button>
+                                <div class="flex justify-between items-center w-full">
+                                    <div>
+                                        <button v-if="order.status === '待支付' && !isOrderExpired(order)" @click.stop="cancelOrder(order.order_id)" class="px-4 py-2 text-slate-500 text-xs font-bold hover:bg-slate-100 rounded-lg transition border border-slate-200">
+                                            取消订单
+                                        </button>
+                                    </div>
+                                    <div class="flex gap-2">
+                                        <button v-if="order.status === '待支付' && !isOrderExpired(order)" @click.stop="showPaymentInfo(order)" class="btn-gradient px-5 py-2.5 text-white text-xs font-bold rounded-xl shadow-lg shadow-brand-500/30 hover:-translate-y-0.5 transition flex items-center justify-center gap-1 active:scale-95">
+                                            {{ (order.payment_method === 'USDT' || order.payment_method === 'usdt') ? '查看详情 / 上传凭证' : '去支付 / 上传凭证' }} <i class="ri-secure-payment-line"></i>
+                                        </button>
+                                        
+                                        <button v-if="order.status === '待核实'" class="px-3 py-2 text-brand-600 bg-brand-50 text-xs font-bold rounded-lg cursor-default border border-brand-100">
+                                            <i class="ri-time-line"></i> 凭证核实中
+                                        </button>
 
-                                <button v-if="order.status === '已支付' || order.status === '已发货'" @click.stop="toggleChat" class="px-4 py-2 text-emerald-600 bg-emerald-50 text-xs font-bold rounded-lg hover:bg-emerald-100 transition border border-emerald-100">
-                                    <i class="ri-customer-service-2-line"></i> 联系售后
-                                </button>
+                                        <button v-if="order.status === '已支付' || order.status === '已发货'" @click.stop="toggleChat" class="px-4 py-2 text-emerald-600 bg-emerald-50 text-xs font-bold rounded-lg hover:bg-emerald-100 transition border border-emerald-100">
+                                            <i class="ri-customer-service-2-line"></i> 联系售后
+                                        </button>
+                                    </div>
+                                </div>
                             </div>
                         </div>
 
@@ -2863,15 +2866,38 @@ if (res.data.status === '已支付') {
                             `;
                         }
 
-                        // 弹出成功窗口
+                       // 弹出成功窗口
                         await Swal.fire({
-                            html: htmlContent,
+                            html: `
+                                <div class="flex flex-col items-center pt-2">
+                                    <div class="w-16 h-16 rounded-full bg-emerald-100 flex items-center justify-center mb-3">
+                                        <i class="ri-check-line text-4xl text-emerald-500"></i>
+                                    </div>
+                                    <h3 class="text-2xl font-bold text-slate-800 mb-1">下单成功</h3>
+                                    <div class="text-sm text-slate-500 mb-4">订单号: <span class="font-mono font-bold text-slate-700">${res.data.orderId}</span></div>
+                                    ${this.buyForm.method === 'USDT' ? `
+                                        <div class="text-sm text-slate-500 mb-1">请在 <b id="success-timer" class="text-red-500 font-mono text-lg">30:00</b> 内完成支付</div>
+                                        <div class="mb-4">
+                                            <span class="text-sm text-slate-500">支付金额:</span>
+                                            <span class="text-2xl font-bold text-red-500 ml-1">${parseFloat(res.data.usdtAmount).toFixed(2)} USDT</span>
+                                        </div>
+                                    ` : `
+                                        <div class="mb-4">
+                                            <span class="text-sm text-slate-500">需支付:</span>
+                                            <span class="text-2xl font-bold text-brand-600 ml-1">¥${res.data.cnyAmount}</span>
+                                        </div>
+                                        <div class="w-full bg-blue-50 p-4 rounded-xl border border-blue-100 text-sm text-blue-700 leading-relaxed font-medium">
+                                            <i class="ri-information-fill"></i> 请联系客服获取收款码，并发送订单号核实。
+                                        </div>
+                                    `}
+                                </div>
+                            `,
                             showConfirmButton: true,
                             confirmButtonText: '查看订单',
                             buttonsStyling: false,
                             customClass: {
-                                popup: 'rounded-3xl p-2',
-                                confirmButton: 'w-full btn-gradient text-white font-bold py-3.5 rounded-xl shadow-lg mt-4 active:scale-95 transition'
+                                popup: 'rounded-3xl p-2 shadow-2xl',
+                                confirmButton: 'w-full btn-gradient text-white font-bold py-3.5 rounded-xl shadow-lg mt-2 active:scale-95 transition'
                             },
                             didOpen: () => {
                                 const timerDisplay = document.getElementById('success-timer');
@@ -2893,9 +2919,11 @@ if (res.data.status === '已支付') {
                             willClose: () => {
                                 if (timerInterval) clearInterval(timerInterval);
                             }
+                        }).then((result) => {
+                            if (result.isConfirmed || result.isDismissed) {
+                                this.checkLoginAndGo('orders_page');
+                            }
                         });
-                        
-                        this.checkLoginAndGo('orders');
                         this.loadUserBalance();
 
                     } else {
@@ -3345,11 +3373,21 @@ if (res.data.status === '已支付') {
                         this.paymentProofModal.proofUrl = '';
                         
                         Swal.fire({
-                            title: '提交成功',
-                            text: '客服稍后会核实你的支付凭证',
-                            icon: 'success',
+                            html: `
+                                <div class="flex flex-col items-center py-4">
+                                    <div class="w-20 h-20 rounded-full bg-emerald-50 flex items-center justify-center mb-4 border border-emerald-100 shadow-inner">
+                                        <i class="ri-check-double-line text-5xl text-emerald-500"></i>
+                                    </div>
+                                    <h3 class="text-2xl font-bold text-slate-800 mb-2">提交成功</h3>
+                                    <p class="text-sm text-slate-500 font-medium tracking-wide">客服稍后会核实你的支付凭证</p>
+                                </div>
+                            `,
+                            showConfirmButton: false,
                             timer: 2000,
-                            showConfirmButton: false
+                            buttonsStyling: false,
+                            customClass: {
+                                popup: 'rounded-3xl shadow-2xl border border-slate-100'
+                            }
                         });
                         this.loadOrders();
                     } else {
@@ -3365,10 +3403,22 @@ if (res.data.status === '已支付') {
             
             reportQrIssue(orderId) {
                 Swal.fire({
-                    title: '二维码异常',
-                    text: '已通知客服，请稍后刷新页面查看新的二维码',
-                    icon: 'warning',
-                    confirmButtonColor: '#3b82f6'
+                    html: `
+                        <div class="flex flex-col items-center pt-2">
+                            <div class="w-20 h-20 rounded-full bg-orange-50 flex items-center justify-center mb-4 border border-orange-100 shadow-inner">
+                                <i class="ri-error-warning-line text-5xl text-orange-500"></i>
+                            </div>
+                            <h3 class="text-2xl font-bold text-slate-800 mb-2">二维码异常</h3>
+                            <p class="text-sm text-slate-500 font-medium leading-relaxed px-4">已通知客服，请稍后刷新页面查看新的二维码</p>
+                        </div>
+                    `,
+                    showConfirmButton: true,
+                    confirmButtonText: '我知道了',
+                    buttonsStyling: false,
+                    customClass: {
+                        popup: 'rounded-3xl p-2 shadow-2xl',
+                        confirmButton: 'w-full btn-gradient text-white font-bold py-3.5 rounded-xl shadow-lg mt-4 active:scale-95 transition'
+                    }
                 });
                 
                 // 发送通知到后台
