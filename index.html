@@ -1444,9 +1444,9 @@ class="flex items-center justify-between">
                             <span class="text-red-500 font-mono">+ ¥{{ ((buyModal.prod.price * settings.rate) * (settings.feeRate/100)).toFixed(2) }}</span>
                         </div>
                         <div v-if="buyForm.couponDiscount > 0" class="flex justify-between text-sm mb-2">
-                            <span class="text-slate-500">优惠劵立减:</span>
-                            <span class="text-emerald-500 font-mono">- {{ buyForm.couponDiscount }} USDT</span>
-                        </div>
+                            <span class="text-slate-500">优惠劵立减:</span>
+                            <span class="text-emerald-500 font-mono">- ¥{{ buyForm.couponDiscount }}</span>
+                        </div>
                         <div v-if="buyForm.useBalance && buyForm.balanceAmount > 0" class="flex justify-between text-sm mb-2">
                             <span class="text-slate-500">余额抵扣:</span>
                             <span class="text-emerald-500 font-mono">- {{ buyForm.balanceAmount }} USDT</span>
@@ -2717,13 +2717,14 @@ if (!this.user.id) return this.openAuth('login');
             },
             
             calculateFinalAmount(usdtPrice) {
-                let finalAmount = parseFloat(usdtPrice);
-                
-                if (this.buyForm.couponDiscount > 0) {
-                    finalAmount = Math.max(0, finalAmount - this.buyForm.couponDiscount);
-                }
-                
-                if (this.buyForm.useBalance && this.buyForm.balanceAmount > 0) {
+                let finalAmount = parseFloat(usdtPrice);
+                
+                if (this.buyForm.couponDiscount > 0) {
+                    let usdtDiscount = this.buyForm.couponDiscount / this.settings.rate; 
+                    finalAmount = Math.max(0, finalAmount - usdtDiscount); 
+                }
+                
+                if (this.buyForm.useBalance && this.buyForm.balanceAmount > 0) {
                     finalAmount = Math.max(0, finalAmount - this.buyForm.balanceAmount);
                 }
                 
