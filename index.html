@@ -919,7 +919,7 @@ html, body, div, section, main, ul, li {
 
                     <div class="flex items-center gap-2 mb-4 pr-16">
                         <span class="bg-slate-100 text-slate-500 text-[10px] px-1.5 py-0.5 rounded font-mono">订单号</span>
-                        <span class="text-xs text-slate-500 font-fix select-all cursor-pointer hover:text-brand-500" @click="navigator.clipboard.writeText(order.order_id)" title="点击复制">
+                       <span class="text-xs text-slate-500 font-fix select-all cursor-pointer hover:text-brand-500" @click="copyText(order.order_id)" title="点击复制">
                             {{ order.order_id }} <i class="ri-file-copy-line ml-0.5"></i>
                         </span>
                     </div>
@@ -1417,6 +1417,15 @@ class="flex items-center justify-between">
                         </p>
                     </div>
 
+                    <div class="mb-4">
+                        <label class="block text-sm font-bold text-slate-700 mb-2">优惠劵 (选填)</label>
+                        <div class="flex gap-2">
+                            <input v-model="buyForm.couponCode" placeholder="请输入优惠劵代码" class="flex-1 bg-white border border-slate-200 rounded-lg p-3 text-sm focus:border-brand-500 focus:outline-none">
+                            <button @click="verifyCoupon" type="button" class="px-4 bg-brand-50 text-brand-600 font-bold rounded-lg border border-brand-100 hover:bg-brand-100 transition whitespace-nowrap">验证</button>
+                        </div>
+                        <p v-if="buyForm.couponDiscount > 0" class="text-xs text-emerald-500 mt-1 font-bold">已验证，立减 {{ buyForm.couponDiscount }}</p>
+                    </div>
+
                     <div class="bg-slate-50 p-4 rounded-xl border border-slate-100">
                         <div class="flex justify-between text-sm mb-2">
                             <span class="text-slate-500">商品单价:</span>
@@ -1429,6 +1438,10 @@ class="flex items-center justify-between">
                         <div v-if="buyForm.method !== 'USDT' && settings.feeRate > 0" class="flex justify-between text-sm mb-2">
                             <span class="text-slate-500">手续费 ({{ settings.feeRate }}%):</span>
                             <span class="text-red-500 font-mono">+ ¥{{ ((buyModal.prod.price * settings.rate) * (settings.feeRate/100)).toFixed(2) }}</span>
+                        </div>
+                        <div v-if="buyForm.couponDiscount > 0" class="flex justify-between text-sm mb-2">
+                            <span class="text-slate-500">优惠劵立减:</span>
+                            <span class="text-emerald-500 font-mono">- {{ buyForm.couponDiscount }} USDT</span>
                         </div>
                         <div v-if="buyForm.useBalance && buyForm.balanceAmount > 0" class="flex justify-between text-sm mb-2">
                             <span class="text-slate-500">余额抵扣:</span>
@@ -1803,9 +1816,9 @@ const app = Vue.createApp({
                 messageSound: new Audio('https://assets.mixkit.co/sfx/preview/mixkit-correct-answer-tone-2870.mp3'),
 
                // Buy
-                buyModal: { open: false, prod: {} },
-                buyForm: { method: 'USDT', shipName: '', shipTel: '', shipAddr: '', useBalance: false, balanceAmount: 0, contactInfo: '' },
-                orderSubmitting: false,
+            buyModal: { open: false, prod: {} },
+            buyForm: { method: 'USDT', shipName: '', shipTel: '', shipAddr: '', useBalance: false, balanceAmount: 0, contactInfo: '', couponCode: '', couponDiscount: 0 },
+            orderSubmitting: false,
 
                 // Recharge
                 rechargeModal: { open: false },
@@ -2656,10 +2669,28 @@ if (!this.user.id) return this.openAuth('login');
                     shipTel: '', 
                     shipAddr: '',
                     useBalance: false,
-                    balanceAmount: 0
+                    balanceAmount: 0,
+                    couponCode: '',
+                    couponDiscount: 0
                 };
             },
             
+            async verifyCoupon() {
+                if (!this.buyForm.couponCode) return Swal.fire('提示', '请输入优惠劵代码', 'warning');
+                try {
+                    const res = await axios.post(`${API_BASE}/api/coupon/verify`, { code: this.buyForm.couponCode });
+                    if (res.data.success) {
+                        this.buyForm.couponDiscount = res.data.amount;
+                        Swal.fire({icon: 'success', title: '验证成功', text: `已立减 ${res.data.amount}`, timer: 1500, showConfirmButton: false});
+                    } else {
+                        this.buyForm.couponDiscount = 0;
+                        Swal.fire('验证失败', res.data.msg, 'error');
+                    }
+                } catch(e) {
+                    Swal.fire('错误', '网络异常', 'error');
+                }
+            },
+
             calculateCNY(usdtPrice) {
                 let base = usdtPrice * this.settings.rate;
                 if (this.settings.feeRate > 0) {
@@ -2670,6 +2701,10 @@ if (!this.user.id) return this.openAuth('login');
             
             calculateFinalAmount(usdtPrice) {
                 let finalAmount = parseFloat(usdtPrice);
+                
+                if (this.buyForm.couponDiscount > 0) {
+                    finalAmount = Math.max(0, finalAmount - this.buyForm.couponDiscount);
+                }
                 
                 if (this.buyForm.useBalance && this.buyForm.balanceAmount > 0) {
                     finalAmount = Math.max(0, finalAmount - this.buyForm.balanceAmount);
@@ -2716,7 +2751,8 @@ const res = await axios.post(`${API_BASE}/api/order`, {
                         balanceAmount: this.buyForm.balanceAmount,
                         contactInfo: this.buyForm.contactInfo,
                         totalAmount: this.buyModal.prod.price,
-                   
+                        couponCode: this.buyForm.couponCode,
+                    
       cartItems: this.buyModal.prod.id === 'cart' ? this.cartItems : [], // 【修复】必须传入购物车数据
                         source: window.location.hostname, // 【新增】标记订单来源
                         shippingInfo: this.buyModal.prod.type === 'physical' ? {
@@ -3294,6 +3330,16 @@ async fetchChatHistory(sessionId) {
         this.scrollToBottom('hire-chat-msgs');
     } catch(e) {}
 },
+            copyText(text) {
+                const tempInput = document.createElement('input');
+                tempInput.value = text;
+                document.body.appendChild(tempInput);
+                tempInput.select();
+                document.execCommand('copy');
+                document.body.removeChild(tempInput);
+                Swal.fire({icon: 'success', title: '复制成功', timer: 1000, showConfirmButton: false});
+            },
+
             // 新增通用滚动函数
             scrollToBottom(id) {
                 this.$nextTick(() => {
@@ -3401,7 +3447,9 @@ const itemNames = this.cartItems.map(item => `${item.name}${item.variant_name ? 
                     shipAddr: '',
                     useBalance: false,
                     balanceAmount: 0,
-                    contactInfo: ''
+                    contactInfo: '',
+                    couponCode: '',
+                    couponDiscount: 0
                 };
             },
             
