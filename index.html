@@ -1427,7 +1427,7 @@ class="flex items-center justify-between">
                             <input v-model="buyForm.couponCode" placeholder="请输入优惠劵代码" class="flex-1 bg-white border border-slate-200 rounded-lg p-3 text-sm focus:border-brand-500 focus:outline-none">
                             <button @click="verifyCoupon" type="button" class="px-4 bg-brand-50 text-brand-600 font-bold rounded-lg border border-brand-100 hover:bg-brand-100 transition whitespace-nowrap">验证</button>
                         </div>
-                        <p v-if="buyForm.couponDiscount > 0" class="text-xs text-emerald-500 mt-1 font-bold">已验证，立减 {{ buyForm.couponDiscount }}</p>
+                        <p v-if="buyForm.couponDiscount > 0" class="text-xs text-emerald-500 mt-1 font-bold">已验证，已减 {{ buyForm.couponDiscount }} CNY</p>
                     </div>
 
                     <div class="bg-slate-50 p-4 rounded-xl border border-slate-100">
@@ -1444,9 +1444,9 @@ class="flex items-center justify-between">
                             <span class="text-red-500 font-mono">+ ¥{{ ((buyModal.prod.price * settings.rate) * (settings.feeRate/100)).toFixed(2) }}</span>
                         </div>
                         <div v-if="buyForm.couponDiscount > 0" class="flex justify-between text-sm mb-2">
-                            <span class="text-slate-500">优惠劵立减:</span>
-                            <span class="text-emerald-500 font-mono">- ¥{{ buyForm.couponDiscount }}</span>
-                        </div>
+                            <span class="text-slate-500 whitespace-nowrap">优惠劵立减:</span>
+                            <span class="text-emerald-500 font-mono whitespace-nowrap">- ¥ {{ buyForm.couponDiscount }} CNY</span>
+                        </div>
                         <div v-if="buyForm.useBalance && buyForm.balanceAmount > 0" class="flex justify-between text-sm mb-2">
                             <span class="text-slate-500">余额抵扣:</span>
                             <span class="text-emerald-500 font-mono">- {{ buyForm.balanceAmount }} USDT</span>
@@ -2698,7 +2698,7 @@ if (!this.user.id) return this.openAuth('login');
                     const res = await axios.post(`${API_BASE}/api/coupon/verify`, { code: this.buyForm.couponCode });
                     if (res.data.success) {
                         this.buyForm.couponDiscount = res.data.amount;
-                        Swal.fire({icon: 'success', title: '验证成功', text: `已立减 ${res.data.amount}`, timer: 1500, showConfirmButton: false});
+                        Swal.fire({icon: 'success', title: '验证成功', text: `已减 ${res.data.amount} CNY`, timer: 1500, showConfirmButton: false});
                     } else {
                         this.buyForm.couponDiscount = 0;
                         Swal.fire('验证失败', res.data.msg, 'error');
