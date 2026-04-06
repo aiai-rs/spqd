@@ -957,9 +957,14 @@ order.product_name }}</h3>
                                     取消订单
                                 </button>
                                 
-                                <button v-if="order.status === '待支付' && !isOrderExpired(order)" @click.stop="showPaymentInfo(order)" class="btn-gradient px-4 py-2 text-white text-xs font-bold rounded-lg shadow-md hover:-translate-y-0.5 transition flex items-center gap-1">
-                                    去支付/上传凭证 <i class="ri-secure-payment-line"></i>
-                                </button>
+                                <div v-if="order.status === '待支付' && !isOrderExpired(order)" class="flex flex-col items-end gap-2 w-full mt-2">
+                                    <div v-if="order.payment_method === 'USDT' || order.payment_method === 'usdt'" class="w-full bg-blue-50/60 p-3 rounded-xl border border-blue-100 text-[12px] text-blue-600 leading-relaxed text-left tracking-wide font-medium">
+                                        <i class="ri-information-line text-blue-500 text-sm align-middle"></i> 稍等，你的订单支付成功后系统会显示已支付，如你支付了很久没到账你可以点击下方上传凭证让客服核实，或联系在线客服。
+                                    </div>
+                                    <button @click.stop="showPaymentInfo(order)" class="btn-gradient px-5 py-2.5 text-white text-xs font-bold rounded-xl shadow-lg shadow-brand-500/30 hover:-translate-y-0.5 transition flex items-center justify-center gap-1 active:scale-95">
+                                        {{ (order.payment_method === 'USDT' || order.payment_method === 'usdt') ? '查看详情 / 上传凭证' : '去支付 / 上传凭证' }} <i class="ri-secure-payment-line"></i>
+                                    </button>
+                                </div>
                                 
                                 <button v-if="order.status === '待核实'" class="px-3 py-2 text-brand-600 bg-brand-50 text-xs font-bold rounded-lg cursor-default border border-brand-100">
                                     <i class="ri-time-line"></i> 凭证核实中
@@ -2803,40 +2808,71 @@ if (res.data.status === '已支付') {
                             return;
                         }
 
-                        let msg = `订单创建成功！<br>订单号: <b>${res.data.orderId}</b><br>`;
-                        let timerInterval; // 定义计时器变量
+                        let timerInterval;
+                        let htmlContent = '';
 
-                        // 构建弹窗内容
                         if (this.buyForm.method === 'USDT') {
-                            const finalAmount = parseFloat(res.data.usdtAmount).toFixed(4);
-                            
-                            msg += `
-                                请在 <b id="success-timer" class="text-red-500 font-mono text-lg">30:00</b> 内完成支付<br>
-                                支付金额: <b style="color:#ef4444; font-size:1.2em;">${finalAmount} USDT</b><br>
-                                <span style="font-size:10px; color:#666;">(已自动包含随机小数以便核对)</span><br>
-                                支付地址 (TRC20): <br>
-                                <div style="background:#f1f5f9; padding:10px; border:1px dashed #3b82f6; border-radius:4px; margin:5px 0; font-size:13px; font-weight:bold; cursor:pointer; word-break:break-all;" onclick="navigator.clipboard.writeText('${res.data.wallet}')">
-                                    ${res.data.wallet}
-                                    <div style="font-size:10px; color:#3b82f6; margin-top:4px;">📋 点击复制地址</div>
-                                </div>
-                                <div style="background:#fffbeb; border:1px solid #fcd34d; padding:8px; border-radius:4px; margin-top:5px; font-size:12px; color:#b45309; text-align:left;">
-                                    ⚠️ <b>重要提示：</b><br>
-                                    1. 必须支付 <b>${finalAmount}</b> 才能自动到账。<br>
-                                    2. 30分钟内未支付订单将自动过期。<br>
-                                    3. 多出来的小数点是系统随机生成的用于区分订单是否支付成功，支付后会到你的账户余额，下次可以组合支付也可以提现。
+                            const finalAmount = parseFloat(res.data.usdtAmount).toFixed(2);
+                            htmlContent = `
+                                <div class="flex flex-col items-center pt-2">
+                                    <div class="w-16 h-16 rounded-full bg-emerald-100 flex items-center justify-center mb-3">
+                                        <i class="ri-check-line text-4xl text-emerald-500"></i>
+                                    </div>
+                                    <h3 class="text-2xl font-bold text-slate-800 mb-1">下单成功</h3>
+                                    <div class="text-sm text-slate-500 mb-4">订单号: <span class="font-mono font-bold text-slate-700">${res.data.orderId}</span></div>
+                                    <div class="text-sm text-slate-500 mb-1">请在 <b id="success-timer" class="text-red-500 font-mono text-lg">30:00</b> 内完成支付</div>
+                                    <div class="mb-4">
+                                        <span class="text-sm text-slate-500">支付金额:</span>
+                                        <span class="text-2xl font-bold text-red-500 ml-1">${finalAmount} USDT</span>
+                                    </div>
+                                    <p class="text-[10px] text-slate-400 mb-4">(已自动包含随机小数以便核对)</p>
+                                    <div class="w-full text-left mb-1 text-sm font-bold text-slate-700">支付地址 (TRC20):</div>
+                                    <div class="w-full bg-slate-50 p-3 rounded-xl border border-dashed border-brand-300 relative cursor-pointer hover:bg-blue-50 transition group" 
+                                         onclick="navigator.clipboard.writeText('${res.data.wallet}'); const tip=document.getElementById('copy-tip-success'); tip.innerHTML='✅ 地址已复制，请务必仔细核对！'; tip.className='text-center text-xs text-emerald-600 mt-1 font-bold';">
+                                        <div class="font-mono text-sm font-bold text-slate-800 break-all text-center select-all">${res.data.wallet}</div>
+                                        <div id="copy-tip-success" class="text-center text-xs text-brand-500 mt-1 flex items-center justify-center gap-1 transition-all">
+                                            <i class="ri-file-copy-line"></i> 点击复制地址
+                                        </div>
+                                    </div>
+                                    <div class="w-full bg-orange-50 border border-orange-100 rounded-xl p-3 mt-4 text-left">
+                                        <div class="flex items-center gap-1 text-orange-600 font-bold text-xs mb-1"><i class="ri-alert-fill"></i> 重要提示:</div>
+                                        <ul class="text-[11px] text-orange-800 space-y-0.5 list-decimal pl-4">
+                                            <li>必须支付 <b class="text-red-500">${finalAmount}</b> 才能自动到账。</li>
+                                            <li>30分钟内未支付订单将自动过期。</li>
+                                            <li>多出来的小数点是系统随机生成用于区分订单的，支付后多出的金额会退到账户余额。</li>
+                                        </ul>
+                                    </div>
                                 </div>
                             `;
                         } else {
-                            msg += `请支付 <b>¥${res.data.cnyAmount}</b><br>请联系客服获取收款码，并发送订单号 ${res.data.orderId}。`;
+                            htmlContent = `
+                                <div class="flex flex-col items-center pt-2">
+                                    <div class="w-16 h-16 rounded-full bg-emerald-100 flex items-center justify-center mb-3">
+                                        <i class="ri-check-line text-4xl text-emerald-500"></i>
+                                    </div>
+                                    <h3 class="text-2xl font-bold text-slate-800 mb-1">下单成功</h3>
+                                    <div class="text-sm text-slate-500 mb-4">订单号: <span class="font-mono font-bold text-slate-700">${res.data.orderId}</span></div>
+                                    <div class="mb-4">
+                                        <span class="text-sm text-slate-500">需支付:</span>
+                                        <span class="text-2xl font-bold text-brand-600 ml-1">¥${res.data.cnyAmount}</span>
+                                    </div>
+                                    <div class="w-full bg-blue-50 p-4 rounded-xl border border-blue-100 text-sm text-blue-700 leading-relaxed font-medium">
+                                        <i class="ri-information-fill"></i> 请联系客服获取收款码，并发送订单号核实。
+                                    </div>
+                                </div>
+                            `;
                         }
 
                         // 弹出成功窗口
                         await Swal.fire({
-                            title: '下单成功',
-                            html: msg,
-                            icon: 'success',
+                            html: htmlContent,
+                            showConfirmButton: true,
                             confirmButtonText: '查看订单',
-                            confirmButtonColor: '#3b82f6',
+                            buttonsStyling: false,
+                            customClass: {
+                                popup: 'rounded-3xl p-2',
+                                confirmButton: 'w-full btn-gradient text-white font-bold py-3.5 rounded-xl shadow-lg mt-4 active:scale-95 transition'
+                            },
                             didOpen: () => {
                                 const timerDisplay = document.getElementById('success-timer');
                                 if (timerDisplay) {
@@ -3074,13 +3110,40 @@ if (res.data.status === '已支付') {
                             this.reportQrIssue(order.order_id);
                         }
                     });
-                } else {
+               } else {
                     // 没有二维码且不是USDT（即微信/支付宝等待客服上传中）
                     Swal.fire({
-                        title: '等待收款码',
-                        text: `需支付 ¥${order.cny_amount}。请联系客服获取收款码，并发送订单号 ${order.order_id}。`,
-                        icon: 'info',
-                        confirmButtonColor: '#3b82f6'
+                        html: `
+                            <div class="flex flex-col items-center pt-2">
+                                <div class="w-16 h-16 rounded-full bg-blue-50 flex items-center justify-center mb-3 border border-blue-100 shadow-inner">
+                                    <i class="ri-time-line text-4xl text-blue-500 animate-pulse"></i>
+                                </div>
+                                <h3 class="text-2xl font-bold text-slate-800 mb-1">等待收款码</h3>
+                                
+                                <div class="w-full bg-slate-50 p-4 rounded-xl border border-dashed border-slate-300 my-5 cursor-pointer hover:bg-blue-50 hover:border-brand-300 transition"
+                                     onclick="navigator.clipboard.writeText('${order.order_id}'); const tip=document.getElementById('copy-tip-wait'); tip.innerHTML='✅ 单号已复制，快发给客服吧'; tip.className='text-xs text-emerald-600 mt-2 font-bold';">
+                                    <div class="text-xs text-slate-400 mb-1 font-medium tracking-wide">订单号 (点击复制)</div>
+                                    <div class="font-mono font-black text-slate-800 text-lg">${order.order_id} <i class="ri-file-copy-line text-brand-500 ml-1 text-base"></i></div>
+                                    <div id="copy-tip-wait" class="text-xs text-transparent mt-2">占位</div>
+                                </div>
+
+                                <div class="mb-5 border-b border-slate-100 w-full pb-5">
+                                    <span class="text-sm text-slate-500">需支付金额:</span>
+                                    <span class="text-3xl font-bold text-brand-600 ml-2 font-mono">¥${order.cny_amount}</span>
+                                </div>
+                                
+                                <div class="w-full bg-orange-50 p-3.5 rounded-xl border border-orange-100 text-xs text-orange-700 leading-relaxed font-medium text-left">
+                                    <i class="ri-customer-service-2-line text-sm align-middle"></i> 请联系在线客服获取最新收款码，并将复制好的单号发送给客服用于核对。
+                                </div>
+                            </div>
+                        `,
+                        showConfirmButton: true,
+                        confirmButtonText: '我知道了',
+                        buttonsStyling: false,
+                        customClass: {
+                            popup: 'rounded-3xl p-2 shadow-2xl',
+                            confirmButton: 'w-full btn-gradient text-white font-bold py-3.5 rounded-xl shadow-lg mt-2 active:scale-95 transition'
+                        }
                     });
                 }
             },
@@ -3109,27 +3172,57 @@ if (res.data.status === '已支付') {
                     if (res.data.success) {
                         this.rechargeModal.open = false;
                         
-                        let msg = `充值订单创建成功！<br>订单号: <b>${res.data.orderId}</b><br>`;
+                        let htmlContent = '';
                         if (this.rechargeForm.method === 'USDT') {
-                            msg += `
-                                请在 <b class="order-timer">30:00</b> 内完成支付<br>
-                                支付金额: <b style="color:#2563eb">${res.data.usdtAmount} USDT</b><br>
-                                支付地址: <br>
-                                <div style="background:#f1f5f9; padding:8px; border-radius:4px; margin:5px 0; font-family:monospace; font-size:12px; cursor:pointer;" onclick="navigator.clipboard.writeText('${res.data.wallet}')">
-                                    ${res.data.wallet}
-                                    <div style="font-size:10px; color:#64748b;">点击复制地址</div>
+                            htmlContent = `
+                                <div class="flex flex-col items-center pt-2">
+                                    <div class="w-16 h-16 rounded-full bg-emerald-100 flex items-center justify-center mb-3">
+                                        <i class="ri-check-line text-4xl text-emerald-500"></i>
+                                    </div>
+                                    <h3 class="text-2xl font-bold text-slate-800 mb-1">充值提交成功</h3>
+                                    <div class="text-sm text-slate-500 mb-4">单号: <span class="font-mono font-bold text-slate-700">${res.data.orderId}</span></div>
+                                    <div class="text-sm text-slate-500 mb-1">请在 <b class="text-red-500 font-mono text-lg">30:00</b> 内完成支付</div>
+                                    <div class="mb-4">
+                                        <span class="text-sm text-slate-500">支付金额:</span>
+                                        <span class="text-2xl font-bold text-red-500 ml-1">${res.data.usdtAmount} USDT</span>
+                                    </div>
+                                    <div class="w-full text-left mb-1 text-sm font-bold text-slate-700">支付地址 (TRC20):</div>
+                                    <div class="w-full bg-slate-50 p-3 rounded-xl border border-dashed border-brand-300 relative cursor-pointer hover:bg-blue-50 transition group" 
+                                         onclick="navigator.clipboard.writeText('${res.data.wallet}'); const tip=document.getElementById('copy-tip-recharge'); tip.innerHTML='✅ 地址已复制，请仔细核对！'; tip.className='text-center text-xs text-emerald-600 mt-1 font-bold';">
+                                        <div class="font-mono text-sm font-bold text-slate-800 break-all text-center select-all">${res.data.wallet}</div>
+                                        <div id="copy-tip-recharge" class="text-center text-xs text-brand-500 mt-1 flex items-center justify-center gap-1 transition-all">
+                                            <i class="ri-file-copy-line"></i> 点击复制地址
+                                        </div>
+                                    </div>
                                 </div>
                             `;
                         } else {
-                            msg += `请支付 <b>¥${res.data.cnyAmount}</b><br>请联系客服获取收款码，并发送订单号 ${res.data.orderId}。`;
+                            htmlContent = `
+                                <div class="flex flex-col items-center pt-2">
+                                    <div class="w-16 h-16 rounded-full bg-emerald-100 flex items-center justify-center mb-3">
+                                        <i class="ri-check-line text-4xl text-emerald-500"></i>
+                                    </div>
+                                    <h3 class="text-2xl font-bold text-slate-800 mb-1">充值提交成功</h3>
+                                    <div class="text-sm text-slate-500 mb-4">单号: <span class="font-mono font-bold text-slate-700">${res.data.orderId}</span></div>
+                                    <div class="mb-4">
+                                        <span class="text-sm text-slate-500">需支付:</span>
+                                        <span class="text-2xl font-bold text-brand-600 ml-1">¥${res.data.cnyAmount}</span>
+                                    </div>
+                                    <div class="w-full bg-blue-50 p-4 rounded-xl border border-blue-100 text-sm text-blue-700 leading-relaxed font-medium">
+                                        <i class="ri-information-fill"></i> 请联系客服获取收款码，并发送充值单号核实。
+                                    </div>
+                                </div>
+                            `;
                         }
-
                         Swal.fire({
-                            title: '充值成功',
-                            html: msg,
-                            icon: 'success',
+                            html: htmlContent,
+                            showConfirmButton: true,
                             confirmButtonText: '确定',
-                            confirmButtonColor: '#3b82f6'
+                            buttonsStyling: false,
+                            customClass: {
+                                popup: 'rounded-3xl p-2',
+                                confirmButton: 'w-full btn-gradient text-white font-bold py-3.5 rounded-xl shadow-lg mt-4 active:scale-95 transition'
+                            }
                         });
                         
                         this.loadUserBalance();
