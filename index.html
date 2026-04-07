@@ -1987,6 +1987,14 @@
                         }
                     }
                 });
+                // 监听客服撤回消息事件
+                this.socket.on('message_recalled', (data) => {
+                    const targetMsg = this.chatMessages.find(m => m.id == data.messageId);
+                    if (targetMsg) {
+                        targetMsg.content = '此消息已被客服撤回';
+                        targetMsg.msg_type = 'system';
+                    }
+                });
             },
 
             // ── Chat Image Upload ──
@@ -2178,7 +2186,6 @@
                 this.chatOpen = !this.chatOpen;
                 if (this.chatOpen) {
                     history.pushState({ modal: 'chat' }, null, '');
-                    this.chatMessages = [];
                     this.pollChat();
                     this.unreadMessages = 0;
                     this.$nextTick(() => {
@@ -2236,9 +2243,12 @@
                             if (title.includes('HR')) {
                                 this.openHireChat();
                             } else {
-                                this.chatOpen = true;
-                                this.unreadMessages = 0;
-                                this.scrollToBottom('chat-msgs');
+                                if (!this.chatOpen) {
+                                    this.toggleChat();
+                                } else {
+                                    this.unreadMessages = 0;
+                                    this.scrollToBottom('chat-msgs');
+                                }
                             }
                             Swal.close();
                         });
