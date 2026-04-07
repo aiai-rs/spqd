@@ -848,7 +848,7 @@
                 <span class="text-slate-400 font-medium">暂无订单记录</span>
             </div>
             <div v-else class="space-y-4 pb-20">
-                <div v-for="order in myOrders.filter(o => o.product_name !== '余额充值')" :key="order.order_id" class="bg-white border border-slate-100 rounded-2xl p-5 shadow-sm hover:shadow-md transition duration-300 relative overflow-hidden group">
+                <div v-for="order in getFilteredOrders()" :key="order.order_id" class="bg-white border border-slate-100 rounded-2xl p-5 shadow-sm hover:shadow-md transition duration-300 relative overflow-hidden group">
                     <div class="absolute top-0 right-0 px-3 py-1 text-xs font-bold rounded-bl-xl"
                          :class="{
                              'bg-slate-200 text-slate-500': isOrderExpired(order) && order.status === '待支付',
@@ -890,9 +890,9 @@
                                 </div>
                                 <div class="flex justify-end items-center w-full gap-2.5">
                                     <button v-if="order.status === '待支付' && !isOrderExpired(order)" @click.stop="cancelOrder(order.order_id)" class="px-4 py-2.5 text-slate-500 text-xs font-bold hover:bg-slate-100 hover:text-slate-700 rounded-xl transition border border-slate-200">取消订单</button>
-                                    <button v-if="order.status === '待支付' && !isOrderExpired(order)" @click.stop="showPaymentInfo(order)" class="btn-gradient px-5 py-2.5 text-white text-xs font-bold rounded-xl shadow-lg shadow-brand-500/30 hover:-translate-y-0.5 transition flex items-center justify-center gap-1 active:scale-95">
-                                        {{ (order.payment_method === 'USDT' || order.payment_method === 'usdt') ? '查看详情 / 上传凭证' : '去支付 / 上传凭证' }} <i class="ri-secure-payment-line"></i>
-                                    </button>
+                                   <button v-if="order.status === '待支付' && !isOrderExpired(order)" @click.stop="showPaymentInfo(order)" class="btn-gradient px-5 py-2.5 text-white text-xs font-bold rounded-xl shadow-lg shadow-brand-500/30 hover:-translate-y-0.5 transition flex items-center justify-center gap-1 active:scale-95">
+    {{ getOrderBtnText(order) }} <i class="ri-secure-payment-line"></i>
+</button>
                                     <button v-if="order.status === '待核实'" class="px-4 py-2.5 text-brand-600 bg-brand-50 text-xs font-bold rounded-xl cursor-default border border-brand-100">
                                         <i class="ri-time-line"></i> 凭证核实中
                                     </button>
@@ -1768,6 +1768,15 @@
                 return { fee: feeDisplay, final: finalVal };
             }
         },
+        getFilteredOrders() {
+                return this.myOrders.filter(function(o) { return o.product_name !== '余额充值'; });
+            },
+            getOrderBtnText(order) {
+                if (order.payment_method === 'USDT' || order.payment_method === 'usdt') {
+                    return '查看详情 / 上传凭证';
+                }
+                return '去支付 / 上传凭证';
+            },
 
         created() {
             const host = window.location.hostname;
