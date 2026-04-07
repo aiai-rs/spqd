@@ -1793,7 +1793,7 @@
             this.pollChat();
 
             window.addEventListener('popstate', (e) => {
-                if (this.view === 'hire_chat') { this.view = 'hiring'; return; }
+                if (this.view === 'hire_chat') { this.chatMessages = []; this.view = 'hiring'; return; }
                 if (this.view === 'cart')      { this.view = 'home';   return; }
                 if (this.chatOpen || this.productDetailModal.open || this.buyModal.open ||
                     this.authModal.open || this.rechargeModal.open || this.withdrawModal.open ||
@@ -2112,6 +2112,9 @@
             },
 
             setView(v) {
+                if (this.view === 'hire_chat' && v !== 'hire_chat') {
+                    this.chatMessages = [];
+                }
                 if (v === 'products') {
                     this.view = 'home';
                     this.filterCat = 'all';
