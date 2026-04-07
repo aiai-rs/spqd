@@ -1977,15 +1977,15 @@
                             if (box) box.scrollTop = box.scrollHeight;
                             if (msg.sender === 'admin') this.messageSound.play().catch(() => {});
                         });
-                    } else {
-                        if (msg.sender === 'admin') {
-                            this.messageSound.play().catch(() => {});
-                            const isHR = msg.session_id.startsWith('hr_');
-                            const title = isHR ? 'HR 人事 发来新消息' : '客服发来新消息';
-                            if (!isHR && !this.chatOpen) this.unreadMessages++;
-                            this.showChatNotification(msg.msg_type === 'image' ? '[图片]' : msg.content, title);
-                        }
-                    }
+                    } else if (msg.session_id === sid_cs || msg.session_id === sid_hr) {
+                        if (msg.sender === 'admin') {
+                            this.messageSound.play().catch(() => {});
+                            const isHR = msg.session_id.startsWith('hr_');
+                            const title = isHR ? 'HR 人事 发来新消息' : '客服发来新消息';
+                            if (!isHR && !this.chatOpen) this.unreadMessages++;
+                            this.showChatNotification(msg.msg_type === 'image' ? '[图片]' : msg.content, title);
+                        }
+                    }
                 });
             },
 
