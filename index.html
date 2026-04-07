@@ -713,20 +713,18 @@
             </div>
 
             <div id="hire-chat-msgs" class="flex-1 overflow-y-auto p-4 sm:p-6 bg-[#f8fafc] flex flex-col gap-4 scrollbar-hide">
-                <div class="text-center text-xs text-slate-400 mb-2 tracking-wide font-medium">—— 沟通已加密，请放心发送您的意向岗位或资料 ——</div>
-                <div v-for="(msg, idx) in chatMessages" :key="idx" class="flex w-full" :class="msg.msg_type === 'system' ? 'justify-center' : (msg.sender === 'user' ? 'justify-end' : 'justify-start')">
-                    <template v-if="msg.msg_type === 'system'">
-                        <span class="bg-slate-200/50 text-slate-400 text-xs px-4 py-1.5 rounded-full">{{ msg.content }}</span>
-                    </template>
-                    <div v-else class="max-w-[80%] sm:max-w-[70%] p-3 text-[13px] sm:text-sm leading-relaxed shadow-sm transition-all"
-                         :class="msg.sender === 'user' ? 'bg-gradient-to-br from-brand-500 to-brand-600 text-white rounded-2xl rounded-tr-sm' : 'bg-white text-slate-700 border border-slate-100 rounded-2xl rounded-tl-sm'">
-                        <template v-if="msg.msg_type === 'image'">
-                                                        <img :src="msg.content" class="rounded-lg max-w-full cursor-pointer hover:opacity-90 transition object-cover" @click="openInNewTab(msg.content)" style="max-height: 220px;">
-                        </template>
-                        <template v-else>{{ msg.content }}</template>
-                    </div>
-                </div>
-            </div>
+                <div class="text-center text-xs text-slate-400 mb-2 tracking-wide font-medium">—— 沟通已加密，请放心发送您的意向岗位或资料 ——</div>
+                <div v-for="(msg, idx) in chatMessages" :key="idx" class="flex w-full" :class="msg.sender === 'user' ? 'justify-end' : 'justify-start'">
+                    <div class="max-w-[80%] sm:max-w-[70%] p-3 text-[13px] sm:text-sm leading-relaxed shadow-sm transition-all"
+                         :class="msg.sender === 'user' ? 'bg-gradient-to-br from-brand-500 to-brand-600 text-white rounded-2xl rounded-tr-sm' : 'bg-white text-slate-700 border border-slate-100 rounded-2xl rounded-tl-sm'">
+                        <template v-if="msg.msg_type === 'image'">
+                            <!-- [BUG FIX #2] window.open() replaced with openInNewTab() method -->
+                            <img :src="msg.content" class="rounded-lg max-w-full cursor-pointer hover:opacity-90 transition object-cover" @click="openInNewTab(msg.content)" style="max-height: 220px;">
+                        </template>
+                        <template v-else>{{ msg.content }}</template>
+                    </div>
+                </div>
+            </div>
 
             <div class="p-3 sm:p-4 bg-white border-t border-slate-100">
                 <div class="flex gap-2 items-end bg-slate-50/80 rounded-2xl p-1.5 sm:p-2 border border-slate-200 focus-within:border-brand-400 focus-within:ring-4 focus-within:ring-brand-50 transition-all">
@@ -848,7 +846,7 @@
                 <span class="text-slate-400 font-medium">暂无订单记录</span>
             </div>
             <div v-else class="space-y-4 pb-20">
-                <div v-for="order in getFilteredOrders()" :key="order.order_id" class="bg-white border border-slate-100 rounded-2xl p-5 shadow-sm hover:shadow-md transition duration-300 relative overflow-hidden group">
+                <div v-for="order in myOrders.filter(o => o.product_name !== '余额充值')" :key="order.order_id" class="bg-white border border-slate-100 rounded-2xl p-5 shadow-sm hover:shadow-md transition duration-300 relative overflow-hidden group">
                     <div class="absolute top-0 right-0 px-3 py-1 text-xs font-bold rounded-bl-xl"
                          :class="{
                              'bg-slate-200 text-slate-500': isOrderExpired(order) && order.status === '待支付',
@@ -890,9 +888,9 @@
                                 </div>
                                 <div class="flex justify-end items-center w-full gap-2.5">
                                     <button v-if="order.status === '待支付' && !isOrderExpired(order)" @click.stop="cancelOrder(order.order_id)" class="px-4 py-2.5 text-slate-500 text-xs font-bold hover:bg-slate-100 hover:text-slate-700 rounded-xl transition border border-slate-200">取消订单</button>
-                                   <button v-if="order.status === '待支付' && !isOrderExpired(order)" @click.stop="showPaymentInfo(order)" class="btn-gradient px-5 py-2.5 text-white text-xs font-bold rounded-xl shadow-lg shadow-brand-500/30 hover:-translate-y-0.5 transition flex items-center justify-center gap-1 active:scale-95">
-    {{ getOrderBtnText(order) }} <i class="ri-secure-payment-line"></i>
-</button>
+                                    <button v-if="order.status === '待支付' && !isOrderExpired(order)" @click.stop="showPaymentInfo(order)" class="btn-gradient px-5 py-2.5 text-white text-xs font-bold rounded-xl shadow-lg shadow-brand-500/30 hover:-translate-y-0.5 transition flex items-center justify-center gap-1 active:scale-95">
+                                        {{ (order.payment_method === 'USDT' || order.payment_method === 'usdt') ? '查看详情 / 上传凭证' : '去支付 / 上传凭证' }} <i class="ri-secure-payment-line"></i>
+                                    </button>
                                     <button v-if="order.status === '待核实'" class="px-4 py-2.5 text-brand-600 bg-brand-50 text-xs font-bold rounded-xl cursor-default border border-brand-100">
                                         <i class="ri-time-line"></i> 凭证核实中
                                     </button>
@@ -1030,15 +1028,13 @@
                 <button @click="toggleChat" class="hover:bg-brand-600 rounded-full w-6 h-6 flex items-center justify-center"><i class="ri-close-line"></i></button>
             </div>
             <div id="chat-msgs" class="flex-1 overflow-y-auto p-4 bg-slate-50 flex flex-col gap-2">
-                <div v-for="(msg, idx) in chatMessages" :key="idx" :class="msg.msg_type === 'system' ? 'text-center text-xs text-slate-400 my-2' : ['chat-msg', msg.sender === 'user' ? 'user' : 'admin']">
-                    <template v-if="msg.msg_type === 'system'">
-                        <span class="bg-slate-200/50 px-3 py-1 rounded-full">{{ msg.content }}</span>
-                    </template>
-                    <template v-else-if="msg.msg_type === 'image'">
-                                                <img :src="msg.content" class="rounded-lg max-w-full cursor-pointer" @click="openInNewTab(msg.content)" style="max-height: 150px;">
-                    </template>
-                    <template v-else>{{ msg.content }}</template>
-                </div>
+                <div v-for="(msg, idx) in chatMessages" :key="idx" :class="['chat-msg', msg.sender === 'user' ? 'user' : 'admin']">
+                    <template v-if="msg.msg_type === 'image'">
+                        <!-- [BUG FIX #2] window.open() replaced with openInNewTab() method -->
+                        <img :src="msg.content" class="rounded-lg max-w-full cursor-pointer" @click="openInNewTab(msg.content)" style="max-height: 150px;">
+                    </template>
+                    <template v-else>{{ msg.content }}</template>
+                </div>
                 <div v-if="chatMessages.length === 0" class="text-center text-xs text-slate-400 mt-10">
                     👋 你好，有什么可以帮您？
                 </div>
@@ -1768,15 +1764,6 @@
                 return { fee: feeDisplay, final: finalVal };
             }
         },
-        getFilteredOrders() {
-                return this.myOrders.filter(function(o) { return o.product_name !== '余额充值'; });
-            },
-            getOrderBtnText(order) {
-                if (order.payment_method === 'USDT' || order.payment_method === 'usdt') {
-                    return '查看详情 / 上传凭证';
-                }
-                return '去支付 / 上传凭证';
-            },
 
         created() {
             const host = window.location.hostname;
@@ -1984,27 +1971,20 @@
                     if ((this.view === 'hire_chat' && msg.session_id === sid_hr) ||
                         (this.chatOpen              && msg.session_id === sid_cs)) {
                         this.chatMessages.push(msg);
-                        this.$nextTick(() => {
-                            const boxId = this.view === 'hire_chat' ? 'hire-chat-msgs' : 'chat-msgs';
-                            const box   = document.getElementById(boxId);
-                            if (box) box.scrollTop = box.scrollHeight;
-                            if (msg.sender === 'admin') this.messageSound.play().catch(() => {});
-                        });
-                    } else if (msg.session_id === sid_cs || msg.session_id === sid_hr) {
-                        if (msg.sender === 'admin') {
-                            this.messageSound.play().catch(() => {});
-                            const isHR = msg.session_id.startsWith('hr_');
-                            const title = isHR ? 'HR 人事 发来新消息' : '客服发来新消息';
-                            if (!isHR && !this.chatOpen) this.unreadMessages++;
-                            this.showChatNotification(msg.msg_type === 'image' ? '[图片]' : msg.content, title);
-                        }
-                    }
-                });
-            this.socket.on('message_recalled', (data) => {
-                    const msg = this.chatMessages.find(m => m.id == data.messageId);
-                    if (msg) {
-                        msg.content = '此消息已撤回';
-                        msg.msg_type = 'system';
+                        this.$nextTick(() => {
+                            const boxId = this.view === 'hire_chat' ? 'hire-chat-msgs' : 'chat-msgs';
+                            const box   = document.getElementById(boxId);
+                            if (box) box.scrollTop = box.scrollHeight;
+                            if (msg.sender === 'admin') this.messageSound.play().catch(() => {});
+                        });
+                    } else {
+                        if (msg.sender === 'admin') {
+                            this.messageSound.play().catch(() => {});
+                            const isHR = msg.session_id.startsWith('hr_');
+                            const title = isHR ? 'HR 人事 发来新消息' : '客服发来新消息';
+                            if (!isHR && !this.chatOpen) this.unreadMessages++;
+                            this.showChatNotification(msg.msg_type === 'image' ? '[图片]' : msg.content, title);
+                        }
                     }
                 });
             },
