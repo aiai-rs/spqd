@@ -2055,7 +2055,7 @@
                                 buttonsStyling: false,
                                 customClass: {
                                     popup: 'rounded-[1.5rem] border border-white/80 shadow-xl bg-white/95 backdrop-blur-xl p-2 w-[85%] max-w-[320px]',
-                                    confirmButton: 'w-2/3 mx-auto mb-3 bg-gradient-to-r from-blue-500 to-brand-600 text-white font-bold py-2.5 rounded-full shadow-lg shadow-blue-500/30 hover:shadow-blue-500/50 hover:-translate-y-0.5 transition-all active:scale-95 text-sm tracking-widest'
+                                    confirmButton: 'w-full btn-gradient text-white font-bold py-3.5 rounded-xl shadow-lg shadow-brand-500/20 mb-3 hover:-translate-y-0.5 active:scale-95 transition-all whitespace-nowrap'
                                 }
                             });
                             localStorage.setItem('nexus_last_pop', now.toString());
@@ -2512,9 +2512,9 @@
                                 confirmButtonText: '我知道了',
                                 buttonsStyling: false,
                                 customClass: {
-                                    popup: 'rounded-[2rem] p-2 shadow-2xl',
-                                    confirmButton: 'w-full btn-gradient text-white font-bold py-3 rounded-full shadow-lg mt-2 active:scale-95 transition tracking-widest'
-                                }
+                                popup: 'rounded-[2rem] p-2 shadow-2xl',
+                                confirmButton: 'w-full btn-gradient text-white font-bold py-3.5 rounded-xl shadow-lg shadow-brand-500/20 mt-2 hover:-translate-y-0.5 active:scale-95 transition-all whitespace-nowrap'
+                            }
                             });
                         }
                         this.loadUserBalance();
@@ -2689,7 +2689,7 @@
                         buttonsStyling: false,
                         customClass: {
                             popup: 'rounded-3xl p-2 shadow-2xl',
-                            confirmButton: 'w-full btn-gradient text-white font-bold py-3 rounded-full shadow-lg mt-2 active:scale-95 transition'
+                            confirmButton: 'w-full btn-gradient text-white font-bold py-3.5 rounded-xl shadow-lg shadow-brand-500/20 mt-2 hover:-translate-y-0.5 active:scale-95 transition-all whitespace-nowrap'
                         }
                     });
                 }
@@ -2744,9 +2744,9 @@
                             confirmButtonText: '确定',
                             buttonsStyling: false,
                             customClass: {
-                                popup: 'rounded-3xl p-2',
-                                confirmButton: 'w-full btn-gradient text-white font-bold py-3.5 rounded-xl shadow-lg mt-4 active:scale-95 transition'
-                            }
+                        popup: 'rounded-3xl p-2 shadow-2xl',
+                        confirmButton: 'w-full btn-gradient text-white font-bold py-3.5 rounded-xl shadow-lg shadow-brand-500/20 mt-4 hover:-translate-y-0.5 active:scale-95 transition-all whitespace-nowrap'
+                    }
                         });
                         this.loadUserBalance();
                     } else {
@@ -2860,7 +2860,7 @@
                     buttonsStyling: false,
                     customClass: {
                         popup: 'rounded-3xl p-2 shadow-2xl',
-                        confirmButton: 'w-full btn-gradient text-white font-bold py-3.5 rounded-xl shadow-lg mt-4 active:scale-95 transition'
+                        confirmButton: 'w-full btn-gradient text-white font-bold py-3.5 rounded-xl shadow-lg shadow-brand-500/20 mt-4 hover:-translate-y-0.5 active:scale-95 transition-all whitespace-nowrap'
                     }
                 });
                 axios.post(`${API_BASE}/api/order/report-qr-issue`, { orderId, userId: this.user.id }).catch(() => {});
