@@ -1991,14 +1991,14 @@
                         }
                     }
                 });
-            },
             this.socket.on('message_recalled', (data) => {
-                    const msg = this.chatMessages.find(m => m.id == data.messageId);
-                    if (msg) {
-                        msg.content = '此消息已撤回';
-                        msg.msg_type = 'system';
-                    }
-                });
+                    const msg = this.chatMessages.find(m => m.id == data.messageId);
+                    if (msg) {
+                        msg.content = '此消息已撤回';
+                        msg.msg_type = 'system';
+                    }
+                });
+            },
 
             // ── Chat Image Upload ──
             async sendChatImage(event) {
