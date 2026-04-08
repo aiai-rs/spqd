@@ -353,6 +353,13 @@
                 height: 100%;
             }
 
+            body:has([v-if="view === 'hire_chat'"]) footer,
+            body:has([v-if="view === 'hire_chat'"]) nav,
+            body:has(.chat-window) footer,
+            body:has(.chat-window) nav {
+                display: none !important;
+            }
+
             .chat-window {
                 position: fixed !important;
                 top: 0 !important;
@@ -362,10 +369,10 @@
                 transform: none !important;
                 width: 100% !important;
                 max-width: 100% !important;
-                height: 100dvh !important;
+                height: 100% !important;
                 border-radius: 0 !important;
                 border: none !important;
-                z-index: 9999 !important;
+                z-index: 99999 !important;
             }
 
             div[v-if="view === 'hire_chat'"] {
@@ -374,12 +381,12 @@
                 left: 0 !important;
                 right: 0 !important;
                 bottom: 0 !important;
-                height: 100dvh !important;
-                z-index: 9999 !important;
+                height: 100% !important;
+                z-index: 99999 !important;
                 margin: 0 !important;
                 max-width: none !important;
                 border-radius: 0 !important;
-                background: white;
+                background: #f8fafc;
             }
 
             div[v-if="view === 'hire_chat'"] > div:first-child,
