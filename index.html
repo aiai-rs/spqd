@@ -347,10 +347,19 @@
                 display: none !important;
             }
 
-            /* [新增] 解决移动端输入框乱跑和适配 APP 体验 */
+            .chat-window {
+                top: auto !important;
+                bottom: 0 !important;
+                left: 0 !important;
+                transform: none !important;
+                width: 100% !important;
+                max-width: 100% !important;
+                height: 80vh !important;
+                border-radius: 20px 20px 0 0 !important;
+            }
+
             body:has([v-if="view === 'hire_chat'"]) {
                 overflow: hidden !important;
-                position: fixed;
                 width: 100%;
             }
             div[v-if="view === 'hire_chat'"] {
@@ -359,7 +368,7 @@
                 left: 0;
                 right: 0;
                 bottom: 0;
-                height: calc(100dvh - 64px) !important;
+                height: auto !important;
                 z-index: 100;
                 margin: 0 !important;
                 max-width: none !important;
