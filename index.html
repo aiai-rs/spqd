@@ -319,7 +319,6 @@
         }
 
         @media (max-height: 600px) {
-            /* [修改] 当屏幕高度变小（键盘弹出）时，将导航栏强制固定在页面最底部 */
             #mobile-bottom-nav {
                 position: absolute !important;
                 bottom: 0 !important;
@@ -347,41 +346,65 @@
                 display: none !important;
             }
 
+            body:has([v-if="view === 'hire_chat'"]), body:has(.chat-window) {
+                overflow: hidden !important;
+                position: fixed;
+                width: 100%;
+                height: 100%;
+            }
+
             .chat-window {
-                top: auto !important;
-                bottom: 0 !important;
+                position: fixed !important;
+                top: 0 !important;
                 left: 0 !important;
+                right: 0 !important;
+                bottom: 0 !important;
                 transform: none !important;
                 width: 100% !important;
                 max-width: 100% !important;
-                height: 80vh !important;
-                border-radius: 20px 20px 0 0 !important;
+                height: 100dvh !important;
+                border-radius: 0 !important;
+                border: none !important;
+                z-index: 9999 !important;
             }
 
-            body:has([v-if="view === 'hire_chat'"]) {
-                overflow: hidden !important;
-                width: 100%;
-            }
             div[v-if="view === 'hire_chat'"] {
                 position: fixed !important;
-                top: 64px;
-                left: 0;
-                right: 0;
-                bottom: 0;
-                height: auto !important;
-                z-index: 100;
+                top: 0 !important;
+                left: 0 !important;
+                right: 0 !important;
+                bottom: 0 !important;
+                height: 100dvh !important;
+                z-index: 9999 !important;
                 margin: 0 !important;
                 max-width: none !important;
                 border-radius: 0 !important;
-            }
-            #hire-chat-msgs {
-                flex: 1;
-                overflow-y: auto;
-                padding-bottom: 20px;
-            }
-            div[v-if="view === 'hire_chat'"] .p-3.sm\:p-4 {
-                padding-bottom: env(safe-area-inset-bottom) !important;
                 background: white;
+            }
+
+            div[v-if="view === 'hire_chat'"] > div:first-child,
+            .chat-window > div:first-child {
+                padding-top: max(16px, env(safe-area-inset-top)) !important;
+            }
+
+            #hire-chat-msgs, #chat-msgs {
+                flex: 1 !important;
+                overflow-y: auto !important;
+                -webkit-overflow-scrolling: touch !important;
+                padding-bottom: 10px;
+            }
+
+            div[v-if="view === 'hire_chat'"] > div:last-child,
+            .chat-window > div:last-child {
+                padding-bottom: max(12px, env(safe-area-inset-bottom)) !important;
+                background: white;
+            }
+
+            body:has(input:focus) div[v-if="view === 'hire_chat'"] > div:last-child,
+            body:has(textarea:focus) div[v-if="view === 'hire_chat'"] > div:last-child,
+            body:has(input:focus) .chat-window > div:last-child,
+            body:has(textarea:focus) .chat-window > div:last-child {
+                padding-bottom: 12px !important;
             }
         }
     </style>
