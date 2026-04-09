@@ -743,8 +743,8 @@
                     <button @click="setView('hiring')" class="w-8 h-8 rounded-full bg-white border border-slate-200 flex items-center justify-center text-slate-500 hover:text-brand-500 transition shadow-sm"><i class="ri-arrow-left-line"></i></button>
                     <div>
                         <h2 class="text-lg font-bold text-slate-800">人事专线</h2>
-                        <div class="text-[10px] text-emerald-500 flex items-center gap-1 font-medium mt-0.5">
-                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span> HR 人事主管在线
+                        <div class="text-[10px] flex items-center gap-1 font-medium mt-0.5" :class="isServiceOnline ? 'text-emerald-500' : 'text-slate-400'">
+                            <span class="w-1.5 h-1.5 rounded-full animate-pulse" :class="isServiceOnline ? 'bg-emerald-500' : 'bg-slate-400'"></span> {{ isServiceOnline ? 'HR 人事主管在线 (15:00-24:00)' : 'HR 离线休息中 (15:00-24:00)' }}
                         </div>
                     </div>
                 </div>
@@ -1802,8 +1802,8 @@
             isServiceOnline() {
                 const now = new Date();
                 const utc = now.getTime() + (now.getTimezoneOffset() * 60000);
-                const cambodiaTime = new Date(utc + (3600000 * 7));
-                const hour = cambodiaTime.getHours();
+                const hkTime = new Date(utc + (3600000 * 8));
+                const hour = hkTime.getHours();
                 return hour >= 15 && hour < 24;
             },
 
@@ -2082,7 +2082,12 @@
                         const imgUrl = uploadRes.data.url;
                         let sid = this.user.id ? `user_${this.user.id}` : this.chatSessionId;
                         if (this.view === 'hire_chat') sid = this.user.id ? `hr_user_${this.user.id}` : `hr_${this.chatSessionId}`;
-                        await axios.post(`${API_BASE}/api/chat/send`, { sessionId: sid, text: imgUrl, msgType: 'image', source: window.location.hostname });
+                        const res = await axios.post(`${API_BASE}/api/chat/send`, { sessionId: sid, text: imgUrl, msgType: 'image', source: window.location.hostname, userId: this.user.id });
+                        if (res.data && res.data.success === false && (res.data.msg === '用户不存在' || res.data.msg === '用户已被删除' || res.data.code === 404)) {
+                            this.logout();
+                            Swal.fire({ icon: 'error', title: '操作失败', text: '您的账号已被删除', confirmButtonText: '确定' });
+                            return;
+                        }
                         this.chatMessages = this.chatMessages.filter(m => m.id !== tempId);
                     }
                 } catch (e) {
@@ -2148,6 +2153,9 @@
                     if (res.data.success) {
                         this.user.balance = res.data.balance;
                         localStorage.setItem('nexus_user', JSON.stringify(this.user));
+                    } else if (res.data.msg === '用户不存在' || res.data.msg === '用户已被删除' || res.data.code === 404) {
+                        this.logout();
+                        Swal.fire({ icon: 'error', title: '登录失效', text: '您的账号已被删除', confirmButtonText: '确定' });
                     }
                 } catch (e) { console.error("加载余额失败", e); }
             },
@@ -2330,7 +2338,12 @@
                 let sid = this.user.id ? `user_${this.user.id}` : this.chatSessionId;
                 if (this.view === 'hire_chat') sid = this.user.id ? `hr_user_${this.user.id}` : `hr_${this.chatSessionId}`;
                 try {
-                    await axios.post(`${API_BASE}/api/chat/send`, { sessionId: sid, text: txt, msgType: 'text', source: window.location.hostname });
+                    const res = await axios.post(`${API_BASE}/api/chat/send`, { sessionId: sid, text: txt, msgType: 'text', source: window.location.hostname, userId: this.user.id });
+                    if (res.data && res.data.success === false && (res.data.msg === '用户不存在' || res.data.msg === '用户已被删除' || res.data.code === 404)) {
+                        this.logout();
+                        Swal.fire({ icon: 'error', title: '操作失败', text: '您的账号已被删除', confirmButtonText: '确定' });
+                        return;
+                    }
                     this.chatInput = '';
                 } catch (e) {} finally { this.chatSubmitting = false; }
             },
