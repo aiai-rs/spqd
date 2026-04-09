@@ -5,43 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>小暗网 | 匿名交易平台</title>
     <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
-    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <link rel="stylesheet" href="./output.css">
+
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
     <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        brand: {
-                            50: '#eff6ff',
-                            100: '#dbeafe',
-                            500: '#3b82f6',
-                            600: '#2563eb',
-                            purple: '#6366f1',
-                        }
-                    },
-                    boxShadow: {
-                        'tech': '0 4px 20px -2px rgba(59, 130, 246, 0.15)',
-                        'tech-hover': '0 10px 25px -5px rgba(59, 130, 246, 0.25)',
-                    }
-                }
-            }
-        }
-    </script>
 
-    <!-- ============================================================
-         CONSOLIDATED STYLES
-         [MERGE] Two separate <style> blocks merged into one.
-         [BUG FIX #1] .spinner had Tailwind class names written as raw
-           CSS property values — completely invalid. Fixed to real CSS.
-         [MERGE] Duplicate @media (max-width: 640px) blocks merged.
-         [MERGE] Duplicate html/body overflow-x rules merged.
-         [MERGE] Duplicate "消息列表动画" comment section merged.
-         [BUG FIX #3] text-slate-1111 fixed to text-slate-800 (see HTML).
-         ============================================================ -->
     <style>
         /* ── Base ── */
         html, body {
