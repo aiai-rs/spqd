@@ -1022,6 +1022,10 @@
                 <span v-if="hrUnreadMessages > 0" class="absolute top-1 right-3 w-2 h-2 bg-red-500 rounded-full border border-white"></span>
                 <span class="text-[10px] font-medium tracking-tight">招聘</span>
             </div>
+            <div @click="checkLoginAndGo('profile')" class="flex flex-col items-center justify-center w-16 h-full cursor-pointer transition-transform duration-200 active:scale-90" :class="view==='profile' && profileTab!=='orders' ? 'text-[#007aff]' : 'text-[#8e8e93]'">
+                <i class="text-[24px] mb-0.5" :class="view==='profile' && profileTab!=='orders' ? 'ri-user-3-fill' : 'ri-user-3-line'"></i>
+                <span class="text-[10px] font-medium tracking-tight">我的</span>
+            </div>
         </div>
 
     </main>
