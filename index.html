@@ -2238,8 +2238,31 @@
             // ── Customer Service Chat ──
             toggleChat() {
                 if (!this.user || !this.user.id) {
-                    Swal.fire('提示', '请先登录后再联系客服', 'warning');
-                    this.openAuth('login');
+                    Swal.fire({
+                        html: `
+                            <div class="flex flex-col items-center pt-2">
+                                <div class="w-16 h-16 rounded-full bg-blue-50 flex items-center justify-center mb-4 border border-blue-100 shadow-inner">
+                                    <i class="ri-user-unfollow-line text-4xl text-blue-500"></i>
+                                </div>
+                                <h3 class="text-xl font-bold text-slate-800 mb-2">需要登录</h3>
+                                <p class="text-sm text-slate-500 font-medium leading-relaxed">请先登录或注册后再联系客服</p>
+                            </div>
+                        `,
+                        showConfirmButton: true,
+                        confirmButtonText: '去登录',
+                        showCancelButton: true,
+                        cancelButtonText: '取消',
+                        buttonsStyling: false,
+                        customClass: {
+                            popup: 'rounded-3xl p-2 shadow-2xl border border-slate-100',
+                            confirmButton: 'w-full btn-gradient text-white font-bold py-3.5 rounded-xl shadow-lg shadow-brand-500/20 mt-4 hover:-translate-y-0.5 active:scale-95 transition-all',
+                            cancelButton: 'w-full bg-slate-100 text-slate-500 font-bold py-3.5 rounded-xl mt-2 hover:bg-slate-200 active:scale-95 transition-all'
+                        }
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            this.openAuth('login');
+                        }
+                    });
                     return;
                 }
                 this.chatOpen = !this.chatOpen;
@@ -2277,7 +2300,8 @@
                         const lastAdminMsg = adminMsgs.length > 0 ? adminMsgs[adminMsgs.length - 1] : null;
                         if (newMessages.length > oldLength) {
                             if (this.chatInitialized && lastAdminMsg) {
-                                this.unreadMessages = newMessages.filter(m => m.sender === 'admin' && !m.is_read).length;
+                                const newAdminMsgsCount = newMessages.slice(oldLength).filter(m => m.sender === 'admin').length;
+                                this.unreadMessages += newAdminMsgsCount;
                                 this.messageSound.play().catch(() => {});
                                 this.showChatNotification(lastAdminMsg.content);
                             }
@@ -2293,12 +2317,18 @@
                     toast: true,
                     position: 'top-end',
                     showConfirmButton: false,
+                    showCloseButton: true,
                     timer: 5000,
                     timerProgressBar: true,
+                    customClass: {
+                        popup: 'rounded-2xl shadow-xl border border-slate-100 p-3',
+                        closeButton: 'text-slate-400 hover:text-slate-700 focus:outline-none transition-colors mt-1 mr-1',
+                    },
                     didOpen: (toast) => {
                         toast.addEventListener('mouseenter', Swal.stopTimer);
                         toast.addEventListener('mouseleave', Swal.resumeTimer);
-                        toast.addEventListener('click', () => {
+                        toast.addEventListener('click', (e) => {
+                            if (e.target.closest('.swal2-close')) return;
                             if (title.includes('HR')) {
                                 this.openHireChat();
                             } else {
@@ -2313,8 +2343,20 @@
                         });
                     }
                 });
-                Toast.fire({ icon: 'info', title: title, text: text, background: '#ffffff', color: '#334155', iconColor: '#3b82f6' });
-            },
+                Toast.fire({
+                    html: `
+                        <div class="flex items-start gap-3 text-left">
+                            <div class="w-10 h-10 rounded-full bg-gradient-to-br from-brand-500 to-brand-600 flex items-center justify-center text-white shrink-0 shadow-md mt-0.5">
+                                <i class="ri-customer-service-2-fill text-lg"></i>
+                            </div>
+                            <div class="flex-1 min-w-0 pr-2 pt-0.5">
+                                <h4 class="font-bold text-slate-800 text-sm mb-0.5 truncate">${title}</h4>
+                                <p class="text-xs text-slate-500 line-clamp-2 leading-relaxed">${text}</p>
+                            </div>
+                        </div>
+                    `
+                });
+            }
 
             async sendMessage() {
                 if (this.chatSubmitting) return;
@@ -2955,10 +2997,33 @@
             },
 
             // ── HR Chat ──
-            openHireChat() {
+           openHireChat() {
                 if (!this.user || !this.user.id) {
-                    Swal.fire('提示', '请先登录后再进行对接', 'warning');
-                    this.openAuth('login');
+                    Swal.fire({
+                        html: `
+                            <div class="flex flex-col items-center pt-2">
+                                <div class="w-16 h-16 rounded-full bg-blue-50 flex items-center justify-center mb-4 border border-blue-100 shadow-inner">
+                                    <i class="ri-user-unfollow-line text-4xl text-blue-500"></i>
+                                </div>
+                                <h3 class="text-xl font-bold text-slate-800 mb-2">需要登录</h3>
+                                <p class="text-sm text-slate-500 font-medium leading-relaxed">请先登录或注册后再进行对接</p>
+                            </div>
+                        `,
+                        showConfirmButton: true,
+                        confirmButtonText: '去登录',
+                        showCancelButton: true,
+                        cancelButtonText: '取消',
+                        buttonsStyling: false,
+                        customClass: {
+                            popup: 'rounded-3xl p-2 shadow-2xl border border-slate-100',
+                            confirmButton: 'w-full btn-gradient text-white font-bold py-3.5 rounded-xl shadow-lg shadow-brand-500/20 mt-4 hover:-translate-y-0.5 active:scale-95 transition-all',
+                            cancelButton: 'w-full bg-slate-100 text-slate-500 font-bold py-3.5 rounded-xl mt-2 hover:bg-slate-200 active:scale-95 transition-all'
+                        }
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            this.openAuth('login');
+                        }
+                    });
                     return;
                 }
                 this.view = 'hire_chat';
