@@ -1825,6 +1825,15 @@
             this.initSocket();
             this.pollChat();
 
+            document.addEventListener('visibilitychange', () => {
+                if (document.visibilityState === 'visible') {
+                    this.pollChat();
+                    if (this.user.id) {
+                        this.pollUpdates();
+                    }
+                }
+            });
+
             window.addEventListener('popstate', (e) => {
                 if (this.view === 'hire_chat') { this.chatMessages = []; this.view = 'hiring'; return; }
                 if (this.view === 'cart')      { this.view = 'home';   return; }
@@ -1973,6 +1982,7 @@
                     const sid_hr = this.user.id ? `hr_user_${this.user.id}` : `hr_${this.chatSessionId}`;
                     this.socket.emit('join_room', sid_cs);
                     this.socket.emit('join_room', sid_hr);
+                    this.pollChat();
                 });
 
                 this.socket.on('global_update', (data) => {
@@ -2227,6 +2237,11 @@
 
             // ── Customer Service Chat ──
             toggleChat() {
+                if (!this.user || !this.user.id) {
+                    Swal.fire('提示', '请先登录后再联系客服', 'warning');
+                    this.openAuth('login');
+                    return;
+                }
                 this.chatOpen = !this.chatOpen;
                 if (this.chatOpen) {
                     history.pushState({ modal: 'chat' }, null, '');
@@ -2941,6 +2956,11 @@
 
             // ── HR Chat ──
             openHireChat() {
+                if (!this.user || !this.user.id) {
+                    Swal.fire('提示', '请先登录后再进行对接', 'warning');
+                    this.openAuth('login');
+                    return;
+                }
                 this.view = 'hire_chat';
                 history.pushState({ view: 'hire_chat' }, null, '');
                 this.chatMessages = [];
