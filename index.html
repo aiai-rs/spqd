@@ -649,8 +649,9 @@
                             <a :href="'https://t.me/' + siteConfig.contactId" target="_blank" class="flex items-center justify-center gap-2 bg-white border border-slate-200 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:border-brand-500 hover:text-brand-600 transition shadow-sm">
                                 <i class="ri-telegram-fill text-[#0088cc] text-lg"></i> 联系{{ siteConfig.bossName }}
                             </a>
-                            <a @click="openHireChat" class="cursor-pointer flex items-center justify-center gap-2 bg-white border border-slate-200 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:border-brand-500 hover:text-brand-600 transition shadow-sm">
+                            <a @click="openHireChat" class="cursor-pointer flex items-center justify-center gap-2 bg-white border border-slate-200 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:border-brand-500 hover:text-brand-600 transition shadow-sm relative overflow-hidden">
                                 <i class="ri-chat-smile-3-line text-emerald-500 text-lg"></i> 对接专线
+                                <span v-if="hrUnreadMessages > 0" class="absolute top-0 right-0 bg-red-500 text-white text-[10px] px-1.5 py-0.5 rounded-bl-lg font-bold shadow-sm">{{ hrUnreadMessages }}</span>
                             </a>
                         </div>
                     </div>
@@ -1016,13 +1017,10 @@
                 <i class="text-[24px] mb-0.5" :class="view==='orders_page' ? 'ri-file-list-3-fill' : 'ri-file-list-3-line'"></i>
                 <span class="text-[10px] font-medium tracking-tight">订单</span>
             </div>
-            <div @click="setView('hiring')" class="flex flex-col items-center justify-center w-16 h-full cursor-pointer transition-transform duration-200 active:scale-90" :class="view==='hiring' ? 'text-[#007aff]' : 'text-[#8e8e93]'">
+            <div @click="setView('hiring')" class="flex flex-col items-center justify-center w-16 h-full cursor-pointer transition-transform duration-200 active:scale-90 relative" :class="view==='hiring' ? 'text-[#007aff]' : 'text-[#8e8e93]'">
                 <i class="text-[24px] mb-0.5" :class="view==='hiring' ? 'ri-briefcase-fill' : 'ri-briefcase-line'"></i>
+                <span v-if="hrUnreadMessages > 0" class="absolute top-1 right-3 w-2 h-2 bg-red-500 rounded-full border border-white"></span>
                 <span class="text-[10px] font-medium tracking-tight">招聘</span>
-            </div>
-            <div @click="checkLoginAndGo('profile')" class="flex flex-col items-center justify-center w-16 h-full cursor-pointer transition-transform duration-200 active:scale-90" :class="view==='profile' && profileTab!=='orders' ? 'text-[#007aff]' : 'text-[#8e8e93]'">
-                <i class="text-[24px] mb-0.5" :class="view==='profile' && profileTab!=='orders' ? 'ri-user-3-fill' : 'ri-user-3-line'"></i>
-                <span class="text-[10px] font-medium tracking-tight">我的</span>
             </div>
         </div>
 
@@ -1693,6 +1691,7 @@
                 chatSubmitting: false,
                 chatSessionId: localStorage.getItem('chat_session_id') || 'guest_' + Date.now(),
                 unreadMessages: 0,
+                hrUnreadMessages: 0,
                 messageSound: new Audio('https://assets.mixkit.co/sfx/preview/mixkit-correct-answer-tone-2870.mp3'),
 
                 // Buy
@@ -2011,8 +2010,13 @@
                 this.socket.on('new_message', (msg) => {
                     const sid_cs = this.user.id ? `user_${this.user.id}`    : this.chatSessionId;
                     const sid_hr = this.user.id ? `hr_user_${this.user.id}` : `hr_${this.chatSessionId}`;
-                    if ((this.view === 'hire_chat' && msg.session_id === sid_hr) ||
-                        (this.chatOpen              && msg.session_id === sid_cs)) {
+                    
+                    const isHR = msg.session_id.startsWith('hr_');
+                    if (isHR) this.hrMessages.push(msg);
+                    else this.csMessages.push(msg);
+
+                    if ((this.view === 'hire_chat' && isHR) ||
+                        (this.chatOpen && !isHR)) {
                         this.chatMessages.push(msg);
                         this.$nextTick(() => {
                             const boxId = this.view === 'hire_chat' ? 'hire-chat-msgs' : 'chat-msgs';
@@ -2021,14 +2025,14 @@
                             if (msg.sender === 'admin') this.messageSound.play().catch(() => {});
                         });
                     } else if (msg.session_id === sid_cs || msg.session_id === sid_hr) {
-                        if (msg.sender === 'admin') {
-                            this.messageSound.play().catch(() => {});
-                            const isHR = msg.session_id.startsWith('hr_');
-                            const title = isHR ? 'HR 老板助理 发来新消息' : '客服发来新消息';
-                            if (!isHR && !this.chatOpen) this.unreadMessages++;
-                            this.showChatNotification(msg.msg_type === 'image' ? '[图片]' : msg.content, title);
-                        }
-                    }
+                        if (msg.sender === 'admin') {
+                            this.messageSound.play().catch(() => {});
+                            const title = isHR ? 'HR 老板助理 发来新消息' : '客服发来新消息';
+                            if (!isHR && !this.chatOpen) this.unreadMessages++;
+                            if (isHR && this.view !== 'hire_chat') this.hrUnreadMessages++;
+                            this.showChatNotification(msg.msg_type === 'image' ? '[图片]' : msg.content, title);
+                        }
+                    }
                 });
                 // 监听客服撤回消息事件
                 this.socket.on('message_recalled', (data) => {
@@ -2037,6 +2041,10 @@
                         targetMsg.content = '客服撤回了一条消息';
                         targetMsg.msg_type = 'system';
                     }
+                    const csTarget = this.csMessages.find(m => m.id == data.messageId);
+                    if (csTarget) { csTarget.content = '客服撤回了一条消息'; csTarget.msg_type = 'system'; }
+                    const hrTarget = this.hrMessages.find(m => m.id == data.messageId);
+                    if (hrTarget) { hrTarget.content = '客服撤回了一条消息'; hrTarget.msg_type = 'system'; }
                 });
             },
 
@@ -2280,35 +2288,65 @@
             async pollChat() {
                 if (!this.user.id && !this.chatSessionId) return;
                 try {
-                    let sid = this.user.id ? `user_${this.user.id}` : this.chatSessionId;
-                    if (this.view === 'hire_chat') sid = this.user.id ? `hr_user_${this.user.id}` : `hr_${this.chatSessionId}`;
-                    const res = await axios.get(`${API_BASE}/api/chat/history/${sid}`);
-                    const newMessages = res.data || [];
-                    const oldLength   = this.chatMessages.length;
-                    if (this.chatOpen || this.view === 'hire_chat') {
-                        this.chatMessages = newMessages;
-                        if (newMessages.length > oldLength) {
+                    const sid_cs = this.user.id ? `user_${this.user.id}` : this.chatSessionId;
+                    const sid_hr = this.user.id ? `hr_user_${this.user.id}` : `hr_${this.chatSessionId}`;
+
+                    const [res_cs, res_hr] = await Promise.all([
+                        axios.get(`${API_BASE}/api/chat/history/${sid_cs}`),
+                        axios.get(`${API_BASE}/api/chat/history/${sid_hr}`)
+                    ]);
+
+                    const newCsMessages = res_cs.data || [];
+                    const newHrMessages = res_hr.data || [];
+                    const oldCsLength = this.csMessages.length;
+                    const oldHrLength = this.hrMessages.length;
+
+                    if (this.chatOpen) {
+                        this.csMessages = newCsMessages;
+                        this.chatMessages = newCsMessages;
+                        if (newCsMessages.length > oldCsLength) {
                             this.$nextTick(() => {
-                                const boxId = this.view === 'hire_chat' ? 'hire-chat-msgs' : 'chat-msgs';
-                                const box   = document.getElementById(boxId);
+                                const box = document.getElementById('chat-msgs');
                                 if (box) box.scrollTop = box.scrollHeight;
                                 this.messageSound.play().catch(() => {});
                             });
                         }
                     } else {
-                        const adminMsgs    = newMessages.filter(m => m.sender === 'admin');
+                        const adminMsgs = newCsMessages.filter(m => m.sender === 'admin');
                         const lastAdminMsg = adminMsgs.length > 0 ? adminMsgs[adminMsgs.length - 1] : null;
-                        if (newMessages.length > oldLength) {
-                            if (this.chatInitialized && lastAdminMsg) {
-                                const newAdminMsgsCount = newMessages.slice(oldLength).filter(m => m.sender === 'admin').length;
-                                this.unreadMessages += newAdminMsgsCount;
-                                this.messageSound.play().catch(() => {});
-                                this.showChatNotification(lastAdminMsg.content);
-                            }
+                        if (newCsMessages.length > oldCsLength && this.chatInitialized && lastAdminMsg) {
+                            const newAdminMsgsCount = newCsMessages.slice(oldCsLength).filter(m => m.sender === 'admin').length;
+                            this.unreadMessages += newAdminMsgsCount;
+                            this.messageSound.play().catch(() => {});
+                            this.showChatNotification(lastAdminMsg.msg_type === 'image' ? '[图片]' : lastAdminMsg.content, '客服发来新消息');
                         }
-                        this.chatMessages  = newMessages;
-                        this.chatInitialized = true;
+                        this.csMessages = newCsMessages;
+                        if (this.view !== 'hire_chat') this.chatMessages = newCsMessages;
                     }
+
+                    if (this.view === 'hire_chat') {
+                        this.hrMessages = newHrMessages;
+                        this.chatMessages = newHrMessages;
+                        if (newHrMessages.length > oldHrLength) {
+                            this.$nextTick(() => {
+                                const box = document.getElementById('hire-chat-msgs');
+                                if (box) box.scrollTop = box.scrollHeight;
+                                this.messageSound.play().catch(() => {});
+                            });
+                        }
+                    } else {
+                        const adminMsgsHr = newHrMessages.filter(m => m.sender === 'admin');
+                        const lastAdminMsgHr = adminMsgsHr.length > 0 ? adminMsgsHr[adminMsgsHr.length - 1] : null;
+                        if (newHrMessages.length > oldHrLength && this.chatInitialized && lastAdminMsgHr) {
+                            const newAdminMsgsCountHr = newHrMessages.slice(oldHrLength).filter(m => m.sender === 'admin').length;
+                            this.hrUnreadMessages += newAdminMsgsCountHr;
+                            this.messageSound.play().catch(() => {});
+                            this.showChatNotification(lastAdminMsgHr.msg_type === 'image' ? '[图片]' : lastAdminMsgHr.content, 'HR 老板助理 发来新消息');
+                        }
+                        this.hrMessages = newHrMessages;
+                    }
+
+                    this.chatInitialized = true;
                 } catch (e) {}
             },
 
@@ -2453,11 +2491,13 @@
                 this.cartItems = [];
                 localStorage.removeItem('nexus_cart');
                 this.initSocket();
+                this.csMessages = [];
+                this.hrMessages = [];
                 this.chatMessages  = [];
                 this.unreadMessages = 0;
+                this.hrUnreadMessages = 0;
                 Swal.fire({ icon: 'success', title: '已退出', timer: 1000, showConfirmButton: false });
             },
-
             // ── Buy ──
             openBuyModal(prod) {
                 this.productDetailModal.open = false;
@@ -2996,8 +3036,8 @@
                 } catch (e) { Swal.fire('错误', '网络异常', 'error'); }
             },
 
-            // ── HR Chat ──
-           openHireChat() {
+           // ── HR Chat ──
+            openHireChat() {
                 if (!this.user || !this.user.id) {
                     Swal.fire({
                         html: `
@@ -3027,11 +3067,12 @@
                     return;
                 }
                 this.view = 'hire_chat';
+                this.hrUnreadMessages = 0;
                 history.pushState({ view: 'hire_chat' }, null, '');
-                this.chatMessages = [];
+                this.chatMessages = this.hrMessages;
                 const sid_hr = this.user.id ? `hr_user_${this.user.id}` : `hr_${this.chatSessionId}`;
                 if (this.socket) this.socket.emit('join_room', sid_hr);
-                this.fetchChatHistory(sid_hr);
+                this.pollChat();
                 this.scrollToBottom('hire-chat-msgs');
             },
 
