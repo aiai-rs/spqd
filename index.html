@@ -2123,7 +2123,7 @@
                                 buttonsStyling: false,
                                 customClass: {
                                     popup: 'rounded-[1.5rem] border border-white/80 shadow-xl bg-white/95 backdrop-blur-xl p-2 w-[85%] max-w-[320px]',
-                                    confirmButton: 'w-full bg-gradient-to-r from-blue-500 to-indigo-600 text-white font-bold py-3.5 rounded-2xl shadow-lg shadow-blue-500/25 mb-3 active:scale-95 transition-all text-base tracking-wide'
+                                    confirmButton: 'w-full btn-gradient text-white font-bold py-3.5 rounded-xl shadow-lg shadow-brand-500/20 mb-3 hover:-translate-y-0.5 active:scale-95 transition-all whitespace-nowrap'
                                 }
                             });
                             localStorage.setItem('nexus_last_pop', now.toString());
@@ -2672,9 +2672,9 @@
                                 confirmButtonText: '我知道了',
                                 buttonsStyling: false,
                                 customClass: {
-                                    popup: 'rounded-[2rem] p-2 shadow-2xl',
-                                    confirmButton: 'w-full bg-gradient-to-r from-emerald-500 to-teal-500 text-white font-bold py-3.5 rounded-2xl shadow-lg shadow-emerald-500/20 mt-3 active:scale-95 transition-all text-base tracking-wide'
-                                 }
+                                popup: 'rounded-[2rem] p-2 shadow-2xl',
+                                confirmButton: 'w-full btn-gradient text-white font-bold py-3.5 rounded-xl shadow-lg shadow-brand-500/20 mt-2 hover:-translate-y-0.5 active:scale-95 transition-all whitespace-nowrap'
+                            }
                             });
                         }
                         this.loadUserBalance();
@@ -2827,7 +2827,7 @@
                     Swal.fire({
                         html: `
                             <div class="flex flex-col items-center pt-2">
-                                <div class="w-16 h-16 rounded-full bg-gradient-to-br from-blue-100 to-sky-50 flex items-center justify-center mb-3 shadow-md shadow-blue-200 border border-blue-100"><i class="ri-time-line text-4xl text-blue-500"></i></div>
+                                <div class="w-16 h-16 rounded-full bg-blue-50 flex items-center justify-center mb-3 border border-blue-100 shadow-inner"><i class="ri-time-line text-4xl text-blue-500 animate-pulse"></i></div>
                                 <h3 class="text-2xl font-bold text-slate-800 mb-1">等待收款码</h3>
                                 <div class="w-full bg-slate-50 p-4 rounded-xl border border-dashed border-slate-300 my-5 cursor-pointer hover:bg-blue-50 hover:border-brand-300 transition"
                                      onclick="navigator.clipboard.writeText('${order.order_id}'); const tip=document.getElementById('copy-tip-wait'); tip.innerHTML='✅ 单号已复制，快发给客服吧'; tip.className='text-xs text-emerald-600 mt-2 font-bold';">
@@ -2847,9 +2847,9 @@
                         showConfirmButton: true,
                         confirmButtonText: '我知道了',
                         buttonsStyling: false,
-                       customClass: {
-                           popup: 'rounded-3xl p-2 shadow-2xl',
-                           confirmButton: 'w-full bg-gradient-to-r from-blue-500 to-indigo-600 text-white font-bold py-3.5 rounded-2xl shadow-lg shadow-blue-500/25 mt-3 active:scale-95 transition-all text-base tracking-wide'
+                        customClass: {
+                            popup: 'rounded-3xl p-2 shadow-2xl',
+                            confirmButton: 'w-full btn-gradient text-white font-bold py-3.5 rounded-xl shadow-lg shadow-brand-500/20 mt-2 hover:-translate-y-0.5 active:scale-95 transition-all whitespace-nowrap'
                         }
                     });
                 }
